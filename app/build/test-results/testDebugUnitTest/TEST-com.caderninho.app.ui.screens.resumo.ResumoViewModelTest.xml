@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.caderninho.app.ui.screens.resumo.ResumoViewModelTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-29T17:26:27.555Z" hostname="Mac-mini-de-AMANDA.local" time="0.008">
-  <properties/>
-  <testcase name="estado aggregates only sales from the current month" classname="com.caderninho.app.ui.screens.resumo.ResumoViewModelTest" time="0.008"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
