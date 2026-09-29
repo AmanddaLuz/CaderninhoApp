@@ -3,6 +3,16 @@ name: SonarCloud
 on:
   pull_request:
     branches: [develop, main]
+  # main and develop only: these are the long-lived GitFlow branches, so
+  # each keeps its own persistent SonarCloud branch dashboard current after
+  # every merge. Short-lived feature/fix branches are intentionally left
+  # out here; they are still analyzed via the pull_request trigger above
+  # when they open a PR into develop or main, which is all they need.
+  # Doesn't reintroduce the old duplicate-run bug because a merge commit on
+  # main/develop is distinct from the commit the pull_request run analyzed
+  # pre-merge.
+  push:
+    branches: [main, develop]
 
 permissions:
   contents: read
