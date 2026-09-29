@@ -1,7 +1,7 @@
 # SDD project plan
 
 **Status:** In progress
-**Repository:** `AmanddaLuz/CaderninhoApp`
+**Repository:** `AmanddaLuz/CaderninhoApp` (public, GitHub Actions CI/CD live)
 **UI:** Jetpack Compose
 
 ## Delivery phases
@@ -10,7 +10,7 @@
 
 | Phase | Outcome |
 | --- | --- |
-| 0. Foundation | Completed: Compose host, Room + Hilt wiring, quality gates, documentation and GitFlow |
+| 0. Foundation | Completed: Compose host, Room + Hilt wiring, quality gates, documentation, GitFlow, branch protection on `main`/`develop`, and CI/CD (lint, Detekt, tests, Kover 80%, build, SonarCloud) |
 | 1. Clientes | Completed: cliente registration, list with pending-balance highlight |
 | 2. Vendas e fiado | Completed: sale/service registration, payment status, paid/pending toggle |
 | 3. Cobrança WhatsApp | Completed: `wa.me` deep link charge with pending balance message |
@@ -22,7 +22,10 @@
 <!-- markdownlint-enable MD013 -->
 
 Each phase uses a short-lived branch from `develop`. A phase is complete only
-when its behavior, tests and canonical documentation agree.
+when its behavior, tests and canonical documentation agree. Every phase branch
+opens a PR into `develop`; only `develop` may open a PR into `main`, both
+gated by the required CI checks (`Branch policy`, `Lint, Detekt and unit
+tests`, `Coverage 80%`, `Debug build`).
 
 ## Acceptance
 
