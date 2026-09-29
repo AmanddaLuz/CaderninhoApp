@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Legacy backup rules for Android <12 (API < 31).
+  Client and sale data (names, phones, sale values) are personal/financial;
+  we explicitly include the local Room database in device-to-device/cloud
+  backups so users don't lose their client list, and exclude nothing else
+  since no other sensitive file (tokens, caches) exists yet.
+  See docs/adr/0004-explicit-backup-and-network-security.md.
+-->
+<full-backup-content>
+    <include domain="database" path="." />
+</full-backup-content>
