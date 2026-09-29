@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  branch-policy:
+    name: Branch policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate pull request flow
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ "$BASE_REF" == "main" && "$HEAD_REF" != "develop" ]]; then
+            echo "Only develop may open a pull request to main."
+            exit 1
+          fi
+
+  quality:
+    name: Lint, Detekt and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Android Lint
+        run: ./gradlew lintDebug --console=plain --stacktrace
+      - name: Print Android Lint findings
+        if: failure()
+        run: |
+          if [[ -f app/build/reports/lint-results-debug.txt ]]; then
+            cat app/build/reports/lint-results-debug.txt
+          else
+            echo "::warning::Android Lint text report was not generated."
+          fi
+      - name: Detekt
+        if: always()
+        run: ./gradlew detekt --console=plain --stacktrace
+      - name: Unit tests
+        if: always()
+        run: ./gradlew testDebugUnitTest --console=plain --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports
+          if-no-files-found: ignore
+          path: |
+            app/build/reports/lint-results-debug.*
+            app/build/reports/detekt/
+            app/build/reports/tests/
+
+  coverage:
+    name: Coverage 80%
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Generate coverage reports
+        run: >
+          ./gradlew
+          testDebugUnitTest
+          koverXmlReportDebug
+          koverHtmlReportDebug
+          --console=plain
+          --stacktrace
+      - name: Print coverage summary
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          report = Path("app/build/reports/kover/reportDebug.xml")
+          root = ET.parse(report).getroot()
+          lines = next(
+              counter for counter in reversed(root.findall("counter"))
+              if counter.attrib["type"] == "LINE"
+          )
+          covered = int(lines.attrib["covered"])
+          missed = int(lines.attrib["missed"])
+          total = covered + missed
+          percentage = covered * 100 / total if total else 100
+          summary = (
+              f"### Kover coverage\n\n"
+              f"- Line coverage: **{percentage:.2f}%** "
+              f"({covered}/{total})\n"
+              f"- Required minimum: **80%**\n"
+          )
+          print(summary)
+          with open(Path(os.environ["GITHUB_STEP_SUMMARY"]), "a") as output:
+              output.write(summary)
+          PY
+        env:
+          PYTHONUNBUFFERED: "1"
+      - name: Enforce 80% coverage
+        run: ./gradlew koverVerifyDebug --console=plain --stacktrace
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          if-no-files-found: error
+          path: app/build/reports/kover/
+
+  build:
+    name: Debug build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Assemble debug APK
+        run: ./gradlew assembleDebug --stacktrace

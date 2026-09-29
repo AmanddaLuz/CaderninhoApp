@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.caderninho.app.util.FormatadoresTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-29T17:26:27.584Z" hostname="Mac-mini-de-AMANDA.local" time="0.004">
+  <properties/>
+  <testcase name="moeda formats zero" classname="com.caderninho.app.util.FormatadoresTest" time="0.004"/>
+  <testcase name="moeda formats value as brazilian currency" classname="com.caderninho.app.util.FormatadoresTest" time="0.0"/>
+  <testcase name="dataCurta formats a known epoch millis as dd-MM-yyyy" classname="com.caderninho.app.util.FormatadoresTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,19 @@
+package com.caderninho.app.util
+
+import java.text.NumberFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+/** Utilitários de formatação de moeda e datas em português (BR). */
+object Formatadores {
+
+    private val moeda = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+    private val dataCurta = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault())
+
+    fun moeda(valor: Double): String = moeda.format(valor)
+
+    fun dataCurta(timestampMillis: Long): String =
+        dataCurta.format(Instant.ofEpochMilli(timestampMillis))
+}

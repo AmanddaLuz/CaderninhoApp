@@ -1,0 +1,30 @@
+# Testing strategy
+
+## Test pyramid
+
+- Unit: ViewModels (with fake/in-memory repository), `Formatadores`,
+  `WhatsAppUtil` phone normalization.
+- Instrumented: Room DAOs and the `ClienteComVendas` relation query.
+- Manual: navigation flow, WhatsApp intent hand-off on a physical device.
+
+## Critical scenarios
+
+- Blank name is rejected by `ClientesViewModel.adicionarCliente`.
+- Blank description or non-positive value is rejected by
+  `ClienteDetalheViewModel.registrarVenda`.
+- `saldoPendente` only sums `PENDENTE` sales, never `PAGO` ones.
+- Marking a sale as paid stamps `pagoEm`; marking it pending clears it.
+- `ResumoViewModel` excludes sales outside the current calendar month.
+- `ResumoViewModel` groups `PAGO` sales by `FormaPagamento` without double
+  counting.
+- `WhatsAppUtil` normalizes a 10/11-digit local number to `55<numero>` and
+  leaves an already-prefixed `55` number untouched.
+- Room cascade delete: removing a client removes its sales.
+
+## Gates
+
+Android Lint and Detekt fail the build on errors. Kover requires at least 80%
+eligible line coverage; `ui/theme`, `ui/navigation`, `di`, Room DAOs, the
+`CaderninhoDatabase` class, generated `*ScreenKt` Composable wrappers,
+`CaderninhoApp` and `MainActivity` are excluded, since they hold Android
+wiring or declarative UI without business rules.

@@ -1,0 +1,4 @@
+report.file=/Users/amandaluz/AndroidStudioProjects/CaderninhoApp/app/build/kover/bin-reports/testDebugUnitTest.ic
+exclude=android.*
+exclude=com.android.*
+exclude=jdk.internal.*

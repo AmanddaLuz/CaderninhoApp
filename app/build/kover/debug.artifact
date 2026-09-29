@@ -1,0 +1,13 @@
+:app
+app/src/debug/kotlin
+app/src/debug/java
+app/build/generated/ksp/debug/kotlin
+app/build/generated/ksp/debug/java
+app/src/main/kotlin
+app/src/main/java
+
+app/build/tmp/kotlin-classes/debug
+app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes
+app/build/generated/ksp/debug/classes
+
+app/build/kover/bin-reports/testDebugUnitTest.ic
