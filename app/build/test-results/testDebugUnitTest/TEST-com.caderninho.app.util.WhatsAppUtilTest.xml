@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.caderninho.app.util.WhatsAppUtilTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-29T17:26:27.589Z" hostname="Mac-mini-de-AMANDA.local" time="0.001">
-  <properties/>
-  <testcase name="normalizarTelefone strips non digit characters" classname="com.caderninho.app.util.WhatsAppUtilTest" time="0.0"/>
-  <testcase name="normalizarTelefone keeps an already prefixed 55 number untouched" classname="com.caderninho.app.util.WhatsAppUtilTest" time="0.001"/>
-  <testcase name="normalizarTelefone prefixes 55 to a local number" classname="com.caderninho.app.util.WhatsAppUtilTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
