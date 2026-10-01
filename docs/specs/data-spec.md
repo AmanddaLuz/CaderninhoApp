@@ -2,9 +2,11 @@
 
 ## Persistence
 
-- Room (`CaderninhoDatabase`, version 1) is the single local source of truth.
+- Room (`CaderninhoDatabase`, version 2) is the single local source of truth.
 - `ClienteEntity` and `VendaEntity` are the only tables; `VendaEntity` has a
   cascading foreign key to `ClienteEntity` and an index on `clienteId`.
+- `ClienteEntity.cpf` is nullable and has a unique index. Migration 1 to 2
+  adds it without changing existing rows.
 - `Converters` maps `FormaPagamento`/`StatusPagamento` enums to their `name`
   string for storage.
 - `ClienteComVendas` is a `@Relation` projection used for list and detail
