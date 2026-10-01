@@ -3,6 +3,7 @@ package com.caderninho.app.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -13,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
 /**
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 fun CampoFormularioDialog(
     titulo: String,
     campos: List<CampoTexto>,
+    mensagemErro: String? = null,
     onConfirmar: (Map<String, String>) -> Unit,
     onCancelar: () -> Unit
 ) {
@@ -37,12 +40,29 @@ fun CampoFormularioDialog(
                     var valor by valores.getValue(campo.chave)
                     OutlinedTextField(
                         value = valor,
-                        onValueChange = { valor = it },
+                        onValueChange = { novoValor ->
+                            val valorFiltrado = if (campo.somenteDigitos) {
+                                novoValor.filter(Char::isDigit)
+                            } else {
+                                novoValor
+                            }
+                            if (campo.tamanhoMaximo == null || valorFiltrado.length <= campo.tamanhoMaximo) {
+                                valor = valorFiltrado
+                            }
+                        },
                         label = { Text(campo.rotulo) },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = campo.tipoTeclado),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
+                    )
+                }
+                mensagemErro?.let {
+                    Text(
+                        text = it,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
@@ -61,5 +81,8 @@ fun CampoFormularioDialog(
 data class CampoTexto(
     val chave: String,
     val rotulo: String,
-    val valorInicial: String = ""
+    val valorInicial: String = "",
+    val tipoTeclado: KeyboardType = KeyboardType.Text,
+    val somenteDigitos: Boolean = false,
+    val tamanhoMaximo: Int? = null
 )

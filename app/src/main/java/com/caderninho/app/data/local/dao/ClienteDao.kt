@@ -25,7 +25,7 @@ interface ClienteDao {
     @Query("SELECT * FROM clientes ORDER BY nome ASC")
     fun observarClientesComVendas(): Flow<List<ClienteComVendas>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun inserir(cliente: ClienteEntity): Long
 
     @Update

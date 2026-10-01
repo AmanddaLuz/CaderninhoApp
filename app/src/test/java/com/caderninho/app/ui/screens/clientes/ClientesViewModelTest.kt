@@ -1,6 +1,5 @@
 package com.caderninho.app.ui.screens.clientes
 
-import app.cash.turbine.test
 import com.caderninho.app.data.local.ClienteEntity
 import com.caderninho.app.data.local.VendaEntity
 import com.caderninho.app.data.repository.CaderninhoRepository
@@ -10,6 +9,7 @@ import com.caderninho.app.fakes.FakeClienteDao
 import com.caderninho.app.fakes.FakeVendaDao
 import com.caderninho.app.fakes.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -33,11 +33,13 @@ class ClientesViewModelTest {
         val repositorio = criarRepositorio()
         val viewModel = ClientesViewModel(repositorio)
 
-        viewModel.adicionarCliente(nome = "   ", telefone = "11999999999")
+        val salvo = viewModel.adicionarCliente(nome = "   ", telefone = "11999999999", cpf = "")
+        advanceUntilIdle()
 
-        viewModel.clientes.test {
-            assertTrue(awaitItem().isEmpty())
-        }
+        val estado = viewModel.uiState.value
+        assertTrue(estado.clientes.isEmpty())
+        assertTrue(!salvo)
+        assertEquals("Informe o nome do cliente.", estado.erroCadastro)
     }
 
     @Test
@@ -45,14 +47,17 @@ class ClientesViewModelTest {
         val repositorio = criarRepositorio()
         val viewModel = ClientesViewModel(repositorio)
 
-        viewModel.adicionarCliente(nome = " Maria ", telefone = " 11999999999 ")
+        viewModel.adicionarCliente(
+            nome = " Maria ",
+            telefone = " 11999999999 ",
+            cpf = "529.982.247-25"
+        )
 
-        viewModel.clientes.test {
-            skipItems(1)
-            val item = awaitItem().single()
-            assertEquals("Maria", item.cliente.nome)
-            assertEquals(0.0, item.saldoPendente, 0.0)
-        }
+        advanceUntilIdle()
+        val item = viewModel.uiState.value.clientes.single()
+        assertEquals("Maria", item.cliente.nome)
+        assertEquals("52998224725", item.cliente.cpf)
+        assertEquals(0.0, item.saldoPendente, 0.0)
     }
 
     @Test
@@ -80,12 +85,10 @@ class ClientesViewModelTest {
         )
 
         val viewModel = ClientesViewModel(repositorio)
+        advanceUntilIdle()
 
-        viewModel.clientes.test {
-            skipItems(1)
-            val item = awaitItem().single()
-            assertEquals(30.0, item.saldoPendente, 0.0)
-        }
+        val item = viewModel.uiState.value.clientes.single()
+        assertEquals(30.0, item.saldoPendente, 0.0)
     }
 
     @Test
@@ -93,13 +96,48 @@ class ClientesViewModelTest {
         val repositorio = criarRepositorio()
         val clienteId = repositorio.salvarCliente(ClienteEntity(nome = "Joao", telefone = "11988887777"))
         val viewModel = ClientesViewModel(repositorio)
+        advanceUntilIdle()
 
-        viewModel.clientes.test {
-            skipItems(1)
-            val cliente = awaitItem().single().cliente
-            viewModel.removerCliente(cliente)
+        val cliente = viewModel.uiState.value.clientes.single().cliente
+        viewModel.removerCliente(cliente)
+        advanceUntilIdle()
 
-            assertTrue(awaitItem().isEmpty())
-        }
+        assertTrue(viewModel.uiState.value.clientes.isEmpty())
+    }
+
+    @Test
+    fun `atualizarConsulta filters by normalized name or phone digits`() = runTest {
+        val repositorio = criarRepositorio()
+        repositorio.salvarCliente(ClienteEntity(nome = "José Silva", telefone = "(11) 98888-7777"))
+        repositorio.salvarCliente(ClienteEntity(nome = "Maria", telefone = "(21) 97777-6666"))
+        val viewModel = ClientesViewModel(repositorio)
+        advanceUntilIdle()
+
+        viewModel.atualizarConsulta("jose")
+        advanceUntilIdle()
+        assertEquals(listOf("José Silva"), viewModel.uiState.value.clientes.map { it.cliente.nome })
+
+        viewModel.atualizarConsulta("2197777")
+        advanceUntilIdle()
+        assertEquals(listOf("Maria"), viewModel.uiState.value.clientes.map { it.cliente.nome })
+    }
+
+    @Test
+    fun `adicionarCliente rejects invalid and duplicate CPF`() = runTest {
+        val repositorio = criarRepositorio()
+        val viewModel = ClientesViewModel(repositorio)
+
+        assertTrue(!viewModel.adicionarCliente("Ana", "11999999999", "11111111111"))
+        advanceUntilIdle()
+        assertEquals(
+            "Informe um CPF válido ou deixe o campo vazio.",
+            viewModel.uiState.value.erroCadastro
+        )
+
+        assertTrue(viewModel.adicionarCliente("Ana", "11999999999", "52998224725"))
+        advanceUntilIdle()
+        assertTrue(!viewModel.adicionarCliente("Outra Ana", "11888888888", "52998224725"))
+        advanceUntilIdle()
+        assertEquals("Este CPF já está cadastrado.", viewModel.uiState.value.erroCadastro)
     }
 }
