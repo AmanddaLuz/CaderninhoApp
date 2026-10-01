@@ -20,14 +20,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -49,9 +45,6 @@ import com.caderninho.app.data.local.ClientWithSales
 import com.caderninho.app.data.local.SaleWithItems
 import com.caderninho.app.data.local.SaleEntity
 import com.caderninho.app.domain.model.PaymentStatus
-import com.caderninho.app.ui.components.StatusBadge
-import com.caderninho.app.ui.theme.Amber
-import com.caderninho.app.ui.theme.LedgerGreen
 import com.caderninho.app.util.Formatters
 import com.caderninho.app.util.WhatsAppLauncher
 import java.time.LocalDate
@@ -282,76 +275,6 @@ private fun ClientHeaderCard(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SaleCard(
-    sale: SaleWithItems,
-    onMarkPaid: () -> Unit,
-    onMarkPending: () -> Unit,
-    onReschedule: () -> Unit,
-    onDelete: () -> Unit
-) {
-    var isMenuOpen by remember { mutableStateOf(false) }
-    var showDetails by remember { mutableStateOf(false) }
-    Card(
-        onClick = { showDetails = true },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SaleCardContent(sale, Modifier.weight(1f))
-            Box {
-                IconButton(onClick = { isMenuOpen = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Opções da venda")
-                }
-                DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
-                    val pending = sale.sale.status == PaymentStatus.PENDING
-                    if (pending) {
-                        DropdownMenuItem(
-                            text = { Text("Remarcar data") },
-                            onClick = {
-                                onReschedule()
-                                isMenuOpen = false
-                            }
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text(if (pending) "Marcar como pago" else "Marcar como pendente") },
-                        onClick = {
-                            if (pending) onMarkPaid() else onMarkPending()
-                            isMenuOpen = false
-                        }
-                    )
-                    DropdownMenuItem(text = { Text("Remover") }, onClick = {
-                        onDelete()
-                        isMenuOpen = false
-                    })
-                }
-            }
-        }
-        if (showDetails) {
-            SaleDetailsDialog(sale = sale, onClose = { showDetails = false })
-        }
-    }
-}
-
-@Composable
-private fun SaleCardContent(sale: SaleWithItems, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(Formatters.shortDate(sale.sale.createdAt), style = MaterialTheme.typography.labelSmall)
-        sale.sale.dueEpochDay?.let {
-            Text("Previsto: ${LocalDate.ofEpochDay(it).formatDate()}")
-        }
-        Text(Formatters.currencyFromCents(sale.totalCents))
-        StatusBadge(
-            text = if (sale.sale.status == PaymentStatus.PAID) "Pago" else "Pendente",
-            backgroundColor = if (sale.sale.status == PaymentStatus.PAID) LedgerGreen else Amber
-        )
     }
 }
 
