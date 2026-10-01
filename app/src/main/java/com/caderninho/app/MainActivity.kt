@@ -10,30 +10,30 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import com.caderninho.app.notification.NotificacaoCobranca
-import com.caderninho.app.ui.navigation.CaderninhoNavHost
-import com.caderninho.app.ui.theme.CaderninhoTheme
+import com.caderninho.app.notification.ChargeNotification
+import com.caderninho.app.ui.navigation.LedgerNavHost
+import com.caderninho.app.ui.theme.LedgerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val clienteParaCobranca = MutableStateFlow<Long?>(null)
+    private val clientToCharge = MutableStateFlow<Long?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        processarCobranca(intent)
+        processCharge(intent)
         enableEdgeToEdge()
         setContent {
-            val clienteId by clienteParaCobranca.collectAsState()
-            CaderninhoTheme {
+            val clientId by clientToCharge.collectAsState()
+            LedgerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    CaderninhoNavHost(
-                        clienteParaCobranca = clienteId,
-                        onCobrancaConsumida = {
-                            clienteParaCobranca.value = null
-                            intent.removeExtra(NotificacaoCobranca.EXTRA_CLIENTE_ID)
+                    LedgerNavHost(
+                        clientToCharge = clientId,
+                        onChargeConsumed = {
+                            clientToCharge.value = null
+                            intent.removeExtra(ChargeNotification.CLIENT_ID_EXTRA)
                         }
                     )
                 }
@@ -44,17 +44,17 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        processarCobranca(intent)
+        processCharge(intent)
     }
 
-    private fun processarCobranca(intent: Intent?) {
-        val clienteId = intent?.getLongExtra(NotificacaoCobranca.EXTRA_CLIENTE_ID, ID_INVALIDO)
-        if (clienteId != null && clienteId != ID_INVALIDO) {
-            clienteParaCobranca.value = clienteId
+    private fun processCharge(intent: Intent?) {
+        val clientId = intent?.getLongExtra(ChargeNotification.CLIENT_ID_EXTRA, INVALID_ID)
+        if (clientId != null && clientId != INVALID_ID) {
+            clientToCharge.value = clientId
         }
     }
 
     private companion object {
-        const val ID_INVALIDO = -1L
+        const val INVALID_ID = -1L
     }
 }

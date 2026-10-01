@@ -6,7 +6,7 @@
 
 Persist clients and sales locally with Room. Add Firebase Firestore/Auth as
 version-catalog dependencies now, but implement the actual sync adapter in a
-later phase, behind the existing `CaderninhoRepository` contract.
+later phase, behind the existing `LedgerRepository` contract.
 
 ## Rationale
 
@@ -16,8 +16,8 @@ ViewModels, avoids a rewrite of the presentation layer when sync ships.
 
 ## Consequences
 
-- `CaderninhoRepository` remains the single dependency for ViewModels; a
-  future `FirebaseCaderninhoRepositoryImpl` or a decorator over the Room
+- `LedgerRepository` remains the single dependency for ViewModels; a
+  future `FirebaseLedgerRepositoryImpl` or a decorator over the Room
   implementation must satisfy the same contract.
 - No `google-services.json` is committed yet; the `google-services` Gradle
   plugin is declared but not applied to the `app` module until sync is

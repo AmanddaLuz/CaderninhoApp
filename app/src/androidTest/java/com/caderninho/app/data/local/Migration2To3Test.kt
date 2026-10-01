@@ -16,7 +16,7 @@ class Migration2To3Test {
     @get:Rule
     val helper = MigrationTestHelper(
         InstrumentationRegistry.getInstrumentation(),
-        CaderninhoDatabase::class.java,
+        LedgerDatabase::class.java,
         emptyList(),
         FrameworkSQLiteOpenHelperFactory()
     )
@@ -45,7 +45,7 @@ class Migration2To3Test {
             TEST_DATABASE,
             3,
             true,
-            CaderninhoDatabase.MIGRATION_2_3
+            LedgerDatabase.MIGRATION_2_3
         ).use { database ->
             database.query(
                 """
