@@ -30,6 +30,9 @@ class FakeClienteDao(private val vendaDao: FakeVendaDao) : ClienteDao {
             lista.map { cliente -> ClienteComVendas(cliente, vendaDao.vendasDoCliente(cliente.id)) }
         }
 
+    override suspend fun obterCliente(clienteId: Long): ClienteEntity? =
+        clientes.value.firstOrNull { it.id == clienteId }
+
     override suspend fun inserir(cliente: ClienteEntity): Long {
         val comId = if (cliente.id == 0L) cliente.copy(id = proximoId++) else cliente
         clientes.value = clientes.value.filterNot { it.id == comId.id } + comId

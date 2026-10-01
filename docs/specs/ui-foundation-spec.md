@@ -20,6 +20,12 @@
 - The client screen exposes one search field for normalized name or phone
   matching. Its registration dialog accepts an optional numeric CPF and
   renders ViewModel validation errors without closing.
+- The client detail screen registers one or more sale items, requests an
+  expected-payment date for pending sales and requests notification
+  permission only when reminders become relevant.
+- Charging opens a selector for pending sales. Overdue and today-due sales
+  start selected, select-all is available, and the displayed total reacts to
+  the explicit selection before the WhatsApp hand-off.
 - Reusable, generic components live in `ui/components` and take no
   feature-specific dependency:
   - `CampoFormularioDialog`/`CampoTexto`: generic labeled-fields dialog used

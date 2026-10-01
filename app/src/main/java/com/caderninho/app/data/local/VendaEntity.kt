@@ -19,17 +19,19 @@ import com.caderninho.app.domain.model.StatusPagamento
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("clienteId")]
+    indices = [
+        Index("clienteId"),
+        Index(value = ["clienteId", "status", "vencimentoEpochDay"])
+    ]
 )
 @TypeConverters(Converters::class)
 data class VendaEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val clienteId: Long,
-    val descricao: String,
-    val valor: Double,
     val formaPagamento: FormaPagamento,
     val status: StatusPagamento,
+    val vencimentoEpochDay: Long? = null,
     val criadoEm: Long = System.currentTimeMillis(),
     val pagoEm: Long? = null
 )

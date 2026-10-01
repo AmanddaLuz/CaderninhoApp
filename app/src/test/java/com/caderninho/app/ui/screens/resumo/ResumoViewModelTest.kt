@@ -2,13 +2,14 @@ package com.caderninho.app.ui.screens.resumo
 
 import app.cash.turbine.test
 import com.caderninho.app.data.local.ClienteEntity
-import com.caderninho.app.data.local.VendaEntity
 import com.caderninho.app.data.repository.CaderninhoRepository
 import com.caderninho.app.domain.model.FormaPagamento
 import com.caderninho.app.domain.model.StatusPagamento
 import com.caderninho.app.fakes.FakeClienteDao
 import com.caderninho.app.fakes.FakeVendaDao
 import com.caderninho.app.fakes.MainDispatcherRule
+import com.caderninho.app.fakes.VendaTeste
+import com.caderninho.app.fakes.salvarVendaTeste
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -36,34 +37,31 @@ class ResumoViewModelTest {
         val repositorio = CaderninhoRepository(clienteDao, vendaDao)
         val clienteId = repositorio.salvarCliente(ClienteEntity(nome = "Carlos", telefone = "11966665555"))
 
-        repositorio.salvarVenda(
-            VendaEntity(
-                clienteId = clienteId,
-                descricao = "Venda deste mes paga",
-                valor = 100.0,
+        repositorio.salvarVendaTeste(
+            clienteId = clienteId,
+            descricao = "Venda deste mes paga",
+            valorCentavos = 10_000,
+            status = StatusPagamento.PAGO,
+            dados = VendaTeste(
                 formaPagamento = FormaPagamento.PIX,
-                status = StatusPagamento.PAGO,
                 criadoEm = instanteNoMesAtual(),
                 pagoEm = instanteNoMesAtual()
             )
         )
-        repositorio.salvarVenda(
-            VendaEntity(
-                clienteId = clienteId,
-                descricao = "Venda deste mes pendente",
-                valor = 50.0,
-                formaPagamento = FormaPagamento.DINHEIRO,
-                status = StatusPagamento.PENDENTE,
-                criadoEm = instanteNoMesAtual()
-            )
+        repositorio.salvarVendaTeste(
+            clienteId = clienteId,
+            descricao = "Venda deste mes pendente",
+            valorCentavos = 5_000,
+            status = StatusPagamento.PENDENTE,
+            dados = VendaTeste(criadoEm = instanteNoMesAtual())
         )
-        repositorio.salvarVenda(
-            VendaEntity(
-                clienteId = clienteId,
-                descricao = "Venda do mes passado",
-                valor = 999.0,
+        repositorio.salvarVendaTeste(
+            clienteId = clienteId,
+            descricao = "Venda do mes passado",
+            valorCentavos = 99_900,
+            status = StatusPagamento.PAGO,
+            dados = VendaTeste(
                 formaPagamento = FormaPagamento.PIX,
-                status = StatusPagamento.PAGO,
                 criadoEm = instanteNoMesPassado(),
                 pagoEm = instanteNoMesPassado()
             )

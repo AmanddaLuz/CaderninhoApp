@@ -137,7 +137,7 @@ private fun ConteudoClientes(
                     ClienteCard(
                         nome = item.cliente.nome,
                         telefone = item.cliente.telefone,
-                        saldoPendente = item.saldoPendente,
+                        saldoPendenteCentavos = item.saldoPendenteCentavos,
                         onClick = { onClienteClick(item.cliente.id) }
                     )
                 }
@@ -150,16 +150,16 @@ private fun ConteudoClientes(
 private fun ClienteCard(
     nome: String,
     telefone: String,
-    saldoPendente: Double,
+    saldoPendenteCentavos: Long,
     onClick: () -> Unit
 ) {
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(nome, style = MaterialTheme.typography.titleMedium)
             Text(telefone, style = MaterialTheme.typography.bodyMedium)
-            if (saldoPendente > 0.0) {
+            if (saldoPendenteCentavos > 0L) {
                 SeloStatus(
-                    texto = "Fiado: ${Formatadores.moeda(saldoPendente)}",
+                    texto = "Fiado: ${Formatadores.moedaCentavos(saldoPendenteCentavos)}",
                     corFundo = Vermelho,
                     modifier = Modifier.padding(top = 8.dp)
                 )

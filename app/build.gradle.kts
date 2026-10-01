@@ -69,6 +69,9 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -112,6 +115,8 @@ kover {
                     "*.Manifest*",
                     "*.*ScreenKt",
                     "*.*ScreenKt$*",
+                    "*.*DialogKt",
+                    "*.*DialogKt$*",
                     "*.CaderninhoApp",
                     "*.MainActivity",
                     "*.MainActivity$*",
@@ -120,15 +125,28 @@ kover {
                     "*.di.*",
                     "*.data.local.dao.*",
                     "*.data.local.CaderninhoDatabase",
+                    "*.data.local.CaderninhoDatabase$*",
                     "*.data.local.CaderninhoDatabase_Impl",
                     "*.data.local.CaderninhoDatabase_Impl$*",
                     "*.data.local.Converters",
                     "*.util.WhatsAppUtil",
+                    "*.notification.NotificacaoCobranca",
+                    "*.notification.WorkManagerLembreteCobrancaScheduler",
+                    "*.notification.WorkManagerLembreteCobrancaScheduler$*",
+                    "*.notification.LembreteCobrancaWorker",
+                    "*.notification.LembreteCobrancaWorker$*",
                     "*.ui.components.*",
+                    "*.ui.screens.venda.FormularioVendaEditor",
+                    "*.ui.screens.venda.FormularioVendaEstado",
+                    "*.ui.screens.venda.FormularioVendaEvento*",
+                    "*.ui.screens.venda.LinhaItemUi",
+                    "*.ui.screens.venda.ClienteDetalheAcoes",
                     "*ComposableSingletons*",
                     "*ComposableSingletons*$*",
                     "*_Factory",
                     "*_Factory$*",
+                    "*_MembersInjector",
+                    "*_MembersInjector$*",
                     "*_HiltModules",
                     "*_HiltModules$*",
                     "*_HiltModules_*",
