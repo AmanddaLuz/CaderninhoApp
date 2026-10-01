@@ -23,7 +23,9 @@ object DatabaseModule {
             context,
             CaderninhoDatabase::class.java,
             CaderninhoDatabase.DATABASE_NAME
-        ).build()
+        )
+            .addMigrations(CaderninhoDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideClienteDao(database: CaderninhoDatabase): ClienteDao = database.clienteDao()

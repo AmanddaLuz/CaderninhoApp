@@ -17,6 +17,9 @@
   `collectAsState()`.
 - Screens are passive: they render `StateFlow` values and forward user
   intents to the ViewModel; no business rule lives in a Composable.
+- The client screen exposes one search field for normalized name or phone
+  matching. Its registration dialog accepts an optional numeric CPF and
+  renders ViewModel validation errors without closing.
 - Reusable, generic components live in `ui/components` and take no
   feature-specific dependency:
   - `CampoFormularioDialog`/`CampoTexto`: generic labeled-fields dialog used

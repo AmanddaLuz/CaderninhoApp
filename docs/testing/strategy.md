@@ -10,6 +10,9 @@
 ## Critical scenarios
 
 - Blank name is rejected by `ClientesViewModel.adicionarCliente`.
+- CPF accepts empty input, validates Brazilian check digits, is normalized to
+  digits and rejects duplicates.
+- Client search ignores name case/accents and phone punctuation.
 - Blank description or non-positive value is rejected by
   `ClienteDetalheViewModel.registrarVenda`.
 - `saldoPendente` only sums `PENDENTE` sales, never `PAGO` ones.
@@ -20,6 +23,9 @@
 - `WhatsAppUtil` normalizes a 10/11-digit local number to `55<numero>` and
   leaves an already-prefixed `55` number untouched.
 - Room cascade delete: removing a client removes its sales.
+- Room migration 1 to 2 preserves clients and adds nullable CPF.
+- Reminder scheduling must create one unique job per pending sale and cancel
+  it when that sale is paid or removed.
 
 ## Gates
 
