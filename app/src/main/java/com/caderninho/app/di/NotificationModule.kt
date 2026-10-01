@@ -9,10 +9,10 @@ import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class NotificationModule {
+interface NotificationModule {
 
     @Binds
-    abstract fun bindChargeReminderScheduler(
+    fun bindChargeReminderScheduler(
         implementation: WorkManagerChargeReminderScheduler
     ): ChargeReminderScheduler
 }
