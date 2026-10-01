@@ -25,6 +25,9 @@ interface ClienteDao {
     @Query("SELECT * FROM clientes ORDER BY nome ASC")
     fun observarClientesComVendas(): Flow<List<ClienteComVendas>>
 
+    @Query("SELECT * FROM clientes WHERE id = :clienteId")
+    suspend fun obterCliente(clienteId: Long): ClienteEntity?
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun inserir(cliente: ClienteEntity): Long
 

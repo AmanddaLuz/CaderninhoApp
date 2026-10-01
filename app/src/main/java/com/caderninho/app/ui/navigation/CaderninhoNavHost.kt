@@ -7,6 +7,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -23,8 +24,20 @@ import com.caderninho.app.ui.screens.venda.ClienteDetalheScreen
 
 /** Grafo de navegação principal do app: abas inferiores + tela de detalhe do cliente. */
 @Composable
-fun CaderninhoNavHost() {
+fun CaderninhoNavHost(
+    clienteParaCobranca: Long? = null,
+    onCobrancaConsumida: () -> Unit = {}
+) {
     val navController = rememberNavController()
+
+    LaunchedEffect(clienteParaCobranca) {
+        clienteParaCobranca?.let { clienteId ->
+            navController.navigate(rotaDetalheCliente(clienteId, cobrar = true)) {
+                launchSingleTop = true
+            }
+            onCobrancaConsumida()
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -69,7 +82,13 @@ fun CaderninhoNavHost() {
             }
             composable(
                 route = ROTA_DETALHE_CLIENTE,
-                arguments = listOf(navArgument("clienteId") { type = NavType.LongType })
+                arguments = listOf(
+                    navArgument("clienteId") { type = NavType.LongType },
+                    navArgument("cobrar") {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    }
+                )
             ) {
                 ClienteDetalheScreen()
             }
