@@ -34,3 +34,10 @@ eligible line coverage; `ui/theme`, `ui/navigation`, `di`, Room DAOs, the
 `CaderninhoDatabase` class, generated `*ScreenKt` Composable wrappers,
 `CaderninhoApp` and `MainActivity` are excluded, since they hold Android
 wiring or declarative UI without business rules.
+
+SonarQube Cloud enforces at least 80% coverage on new code through its Quality
+Gate. The CI scanner waits for that result and fails the `SonarCloud analysis`
+job when the gate fails. Its source-level coverage exclusions mirror Kover's
+eligible class set, including passive Compose screens/components,
+`Converters` and `WhatsAppUtil`; changing one exclusion list requires updating
+the other in the same pull request.
