@@ -15,7 +15,8 @@
   cancelled only when no pending sale remains in that group. Returning a sale
   to pending requires an expected payment date and schedules its group.
 - The charge selector lists every pending sale, preselects overdue and
-  today-due sales, supports select-all, and calculates the message total from
+  today-due sales,
+  supports selection, clearing and select-all, and calculates the message total from
   the final explicit selection.
 
 ## Rationale

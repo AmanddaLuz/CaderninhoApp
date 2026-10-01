@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -119,7 +119,7 @@ fun ClienteDetalheScreen(
     if (cobranca.aberta) {
         CobrancaDialog(
             estado = cobranca,
-            onAlternarVenda = viewModel::alternarVendaCobranca,
+            onDefinirVenda = viewModel::definirVendaCobranca,
             onSelecionarTodas = viewModel::selecionarTodasCobrancas,
             onConfirmar = viewModel::confirmarCobranca,
             onCancelar = viewModel::fecharCobranca
@@ -247,7 +247,11 @@ private fun VendaCard(
     onRemover: () -> Unit
 ) {
     var menuAberto by remember { mutableStateOf(false) }
-    Card(modifier = Modifier.fillMaxWidth()) {
+    var mostrarDetalhes by remember { mutableStateOf(false) }
+    Card(
+        onClick = { mostrarDetalhes = true },
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -256,7 +260,7 @@ private fun VendaCard(
             VendaCardConteudo(venda, Modifier.weight(1f))
             Box {
                 IconButton(onClick = { menuAberto = true }) {
-                    Icon(Icons.Filled.CheckCircle, contentDescription = "Opções da venda")
+                    Icon(Icons.Filled.MoreVert, contentDescription = "Opções da venda")
                 }
                 DropdownMenu(expanded = menuAberto, onDismissRequest = { menuAberto = false }) {
                     val pendente = venda.venda.status == StatusPagamento.PENDENTE
@@ -274,18 +278,15 @@ private fun VendaCard(
                 }
             }
         }
+        if (mostrarDetalhes) {
+            DetalhesVendaDialog(venda = venda, onFechar = { mostrarDetalhes = false })
+        }
     }
 }
 
 @Composable
 private fun VendaCardConteudo(venda: VendaComItens, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        venda.itens.sortedBy { it.ordem }.forEach { item ->
-            Text(
-                "${item.quantidade.formatarQuantidade()} × ${item.descricao} — " +
-                    Formatadores.moedaCentavos(item.subtotalCentavos)
-            )
-        }
         Text(Formatadores.dataCurta(venda.venda.criadoEm), style = MaterialTheme.typography.labelSmall)
         venda.venda.vencimentoEpochDay?.let {
             Text("Previsto: ${LocalDate.ofEpochDay(it).formatarData()}")
@@ -311,6 +312,3 @@ private fun solicitarPermissaoNotificacao(
         ) != PackageManager.PERMISSION_GRANTED
     if (precisaPermissao) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
 }
-
-private fun Double.formatarQuantidade(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else toString().replace('.', ',')

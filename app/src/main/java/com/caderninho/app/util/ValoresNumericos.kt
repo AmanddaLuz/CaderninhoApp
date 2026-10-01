@@ -5,6 +5,21 @@ import java.math.RoundingMode
 
 object ValoresNumericos {
 
+    fun formatarMoedaDigitada(valor: String): String {
+        val digitos = valor.filter(Char::isDigit)
+            .takeLast(MAXIMO_DIGITOS_MOEDA)
+            .ifEmpty { "0" }
+        val centavos = digitos.toLong()
+        val reais = centavos / 100
+        val fracao = centavos % 100
+        val reaisFormatados = reais.toString()
+            .reversed()
+            .chunked(3)
+            .joinToString(".")
+            .reversed()
+        return "R$ $reaisFormatados,${fracao.toString().padStart(2, '0')}"
+    }
+
     fun quantidade(valor: String): Double? =
         valor.normalizarDecimal().toBigDecimalOrNull()
             ?.takeIf { it > BigDecimal.ZERO }
@@ -25,4 +40,6 @@ object ValoresNumericos {
             limpo
         }
     }
+
+    private const val MAXIMO_DIGITOS_MOEDA = 15
 }

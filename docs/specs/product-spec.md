@@ -21,7 +21,8 @@ payment reminders through WhatsApp.
    taps the notification to open a pre-filled WhatsApp charge and manually
    confirms sending it.
 7. Select which pending sales to charge. Overdue sales and sales due today
-   start selected, and the shopkeeper may select all or adjust the selection.
+   start selected, and the shopkeeper may select, clear or select all pending
+   sales.
 8. Monthly summary: total received, total pending and totals by payment
    method.
 

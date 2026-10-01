@@ -1,6 +1,7 @@
 package com.caderninho.app.ui.screens.venda
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -35,9 +37,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.caderninho.app.domain.model.FormaPagamento
+import com.caderninho.app.util.ValoresNumericos
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -46,49 +51,34 @@ private data class LinhaItemUi(
     val id: Long,
     val descricao: String = "",
     val quantidade: String = "1",
-    val valorUnitario: String = ""
+    val valorUnitario: String = "R$ 0,00"
 )
-
-private data class FormularioVendaEstado(
-    val itens: List<LinhaItemUi>,
-    val forma: FormaPagamento,
-    val jaPago: Boolean,
-    val vencimento: Long?
-)
-
-private sealed interface FormularioVendaEvento {
-    data object AdicionarItem : FormularioVendaEvento
-    data class AlterarItem(val item: LinhaItemUi) : FormularioVendaEvento
-    data class RemoverItem(val item: LinhaItemUi) : FormularioVendaEvento
-    data class AlterarForma(val forma: FormaPagamento) : FormularioVendaEvento
-    data class AlterarPago(val pago: Boolean) : FormularioVendaEvento
-    data object SelecionarData : FormularioVendaEvento
-}
 
 private class FormularioVendaEditor {
-    val itens = mutableStateListOf(LinhaItemUi(id = 0))
+    val itens = mutableStateListOf<LinhaItemUi>()
     private var proximoId by mutableLongStateOf(1)
+    var itemEmEdicao by mutableStateOf<LinhaItemUi?>(null)
     var forma by mutableStateOf(FormaPagamento.DINHEIRO)
     var jaPago by mutableStateOf(false)
     var vencimento by mutableStateOf<Long?>(null)
     var mostrarData by mutableStateOf(false)
 
-    val estado: FormularioVendaEstado
-        get() = FormularioVendaEstado(itens, forma, jaPago, vencimento)
+    fun novoItem() {
+        itemEmEdicao = LinhaItemUi(id = proximoId++)
+    }
 
-    fun aplicar(evento: FormularioVendaEvento) {
-        when (evento) {
-            FormularioVendaEvento.AdicionarItem -> itens += LinhaItemUi(id = proximoId++)
-            is FormularioVendaEvento.AlterarItem ->
-                itens[itens.indexOfFirst { it.id == evento.item.id }] = evento.item
-            is FormularioVendaEvento.RemoverItem -> itens.remove(evento.item)
-            is FormularioVendaEvento.AlterarForma -> forma = evento.forma
-            is FormularioVendaEvento.AlterarPago -> {
-                jaPago = evento.pago
-                if (evento.pago) vencimento = null
-            }
-            FormularioVendaEvento.SelecionarData -> mostrarData = true
-        }
+    fun salvarItem(item: LinhaItemUi) {
+        val indice = itens.indexOfFirst { it.id == item.id }
+        if (indice >= 0) itens[indice] = item else itens += item
+        itemEmEdicao = null
+    }
+
+    fun removerItem(item: LinhaItemUi) {
+        itens.remove(item)
+    }
+
+    fun itensFormulario(): List<ItemVendaFormulario> = itens.map {
+        ItemVendaFormulario(it.descricao, it.quantidade, it.valorUnitario)
     }
 }
 
@@ -99,32 +89,141 @@ internal fun FormularioVendaDialog(
     onCancelar: () -> Unit
 ) {
     val editor = remember { FormularioVendaEditor() }
-
     AlertDialog(
         onDismissRequest = onCancelar,
         title = { Text("Nova venda ou serviço") },
-        text = {
-            ConteudoFormularioVenda(
-                estado = editor.estado,
-                mensagemErro = mensagemErro,
-                onEvento = editor::aplicar
-            )
-        },
+        text = { ConteudoFormularioVenda(editor, mensagemErro) },
         confirmButton = {
             TextButton(onClick = {
                 onConfirmar(
-                    editor.itens.map {
-                        ItemVendaFormulario(it.descricao, it.quantidade, it.valorUnitario)
-                    },
+                    editor.itensFormulario(),
                     editor.forma,
                     editor.jaPago,
                     editor.vencimento
                 )
-            }) { Text("Salvar") }
+            }) { Text("Salvar venda") }
         },
         dismissButton = { TextButton(onClick = onCancelar) { Text("Cancelar") } }
     )
+    DialogosFormularioVenda(editor)
+}
 
+@Composable
+private fun ConteudoFormularioVenda(
+    editor: FormularioVendaEditor,
+    mensagemErro: String?
+) {
+    LazyColumn(
+        modifier = Modifier.heightIn(max = 520.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (editor.itens.isEmpty()) {
+            item {
+                Text(
+                    "Nenhum item adicionado.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+        items(editor.itens, key = LinhaItemUi::id) { item ->
+            ItemVendaResumo(
+                item = item,
+                onEditar = { editor.itemEmEdicao = item },
+                onRemover = { editor.removerItem(item) }
+            )
+        }
+        item {
+            TextButton(onClick = editor::novoItem) {
+                Icon(Icons.Filled.Add, contentDescription = null)
+                Text("Adicionar item")
+            }
+        }
+        item { SeletorFormaPagamento(editor) }
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Já foi pago agora?")
+                Switch(
+                    checked = editor.jaPago,
+                    onCheckedChange = {
+                        editor.jaPago = it
+                        if (it) editor.vencimento = null
+                    }
+                )
+            }
+        }
+        if (!editor.jaPago) {
+            item {
+                TextButton(onClick = { editor.mostrarData = true }) {
+                    Text(
+                        editor.vencimento?.let {
+                            "Pagamento previsto: ${LocalDate.ofEpochDay(it).formatarData()}"
+                        } ?: "Selecionar data prevista de pagamento"
+                    )
+                }
+            }
+        }
+        mensagemErro?.let { erro ->
+            item { Text(erro, color = MaterialTheme.colorScheme.error) }
+        }
+    }
+}
+
+@Composable
+private fun ItemVendaResumo(
+    item: LinhaItemUi,
+    onEditar: () -> Unit,
+    onRemover: () -> Unit
+) {
+    Card(onClick = onEditar, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(item.descricao, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "${item.quantidade} × ${item.valorUnitario}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            IconButton(onClick = onRemover) {
+                Icon(Icons.Filled.Delete, contentDescription = "Remover item")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SeletorFormaPagamento(editor: FormularioVendaEditor) {
+    var aberto by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { aberto = true }) {
+            Text("Forma de pagamento: ${editor.forma.rotulo()}")
+        }
+        DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
+            FormaPagamento.entries.forEach { opcao ->
+                DropdownMenuItem(text = { Text(opcao.rotulo()) }, onClick = {
+                    editor.forma = opcao
+                    aberto = false
+                })
+            }
+        }
+    }
+}
+
+@Composable
+private fun DialogosFormularioVenda(editor: FormularioVendaEditor) {
+    editor.itemEmEdicao?.let { item ->
+        ItemVendaDialog(
+            item = item,
+            onSalvar = editor::salvarItem,
+            onCancelar = { editor.itemEmEdicao = null }
+        )
+    }
     if (editor.mostrarData) {
         SeletorDataDialog(
             titulo = "Data prevista de pagamento",
@@ -139,133 +238,74 @@ internal fun FormularioVendaDialog(
 }
 
 @Composable
-private fun ConteudoFormularioVenda(
-    estado: FormularioVendaEstado,
-    mensagemErro: String?,
-    onEvento: (FormularioVendaEvento) -> Unit
+private fun ItemVendaDialog(
+    item: LinhaItemUi,
+    onSalvar: (LinhaItemUi) -> Unit,
+    onCancelar: () -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier.heightIn(max = 520.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(estado.itens, key = LinhaItemUi::id) { item ->
-            ItemVendaCampos(
-                item,
-                podeRemover = estado.itens.size > 1,
-                onAlterar = { onEvento(FormularioVendaEvento.AlterarItem(it)) },
-                onRemover = { onEvento(FormularioVendaEvento.RemoverItem(item)) }
+    var descricao by remember(item.id) { mutableStateOf(item.descricao) }
+    var quantidade by remember(item.id) { mutableStateOf(item.quantidade) }
+    var valor by remember(item.id) {
+        mutableStateOf(
+            TextFieldValue(
+                text = item.valorUnitario,
+                selection = TextRange(item.valorUnitario.length)
             )
-        }
-        item {
-            TextButton(onClick = { onEvento(FormularioVendaEvento.AdicionarItem) }) {
-                Icon(Icons.Filled.Add, null)
-                Text("Adicionar item")
-            }
-        }
-        item {
-            SeletorFormaPagamento(estado.forma) {
-                onEvento(FormularioVendaEvento.AlterarForma(it))
-            }
-        }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Já foi pago agora?")
-                Switch(
-                    checked = estado.jaPago,
-                    onCheckedChange = { onEvento(FormularioVendaEvento.AlterarPago(it)) }
+        )
+    }
+    val valido = descricao.isNotBlank() &&
+        ValoresNumericos.quantidade(quantidade) != null &&
+        ValoresNumericos.centavos(valor.text) != null
+
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        title = { Text(if (item.descricao.isBlank()) "Adicionar item" else "Editar item") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = descricao,
+                    onValueChange = { descricao = it },
+                    label = { Text("Descrição") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = quantidade,
+                    onValueChange = { quantidade = it },
+                    label = { Text("Quantidade") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = valor,
+                    onValueChange = {
+                        val formatado = ValoresNumericos.formatarMoedaDigitada(it.text)
+                        valor = TextFieldValue(formatado, TextRange(formatado.length))
+                    },
+                    label = { Text("Valor unitário") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-        }
-        if (!estado.jaPago) {
-            item {
-                TextButton(onClick = { onEvento(FormularioVendaEvento.SelecionarData) }) {
-                    Text(
-                        estado.vencimento?.let {
-                            "Pagamento previsto: ${LocalDate.ofEpochDay(it).formatarData()}"
-                        } ?: "Selecionar data prevista de pagamento"
+        },
+        confirmButton = {
+            TextButton(
+                enabled = valido,
+                onClick = {
+                    onSalvar(
+                        item.copy(
+                            descricao = descricao.trim(),
+                            quantidade = quantidade,
+                            valorUnitario = valor.text
+                        )
                     )
                 }
-            }
-        }
-        mensagemErro?.let { erro ->
-            item { Text(erro, color = MaterialTheme.colorScheme.error) }
-        }
-    }
-}
-
-@Composable
-private fun ItemVendaCampos(
-    item: LinhaItemUi,
-    podeRemover: Boolean,
-    onAlterar: (LinhaItemUi) -> Unit,
-    onRemover: () -> Unit
-) {
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = item.descricao,
-                onValueChange = { onAlterar(item.copy(descricao = it)) },
-                label = { Text("Descrição") },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
-            )
-            if (podeRemover) {
-                IconButton(onClick = onRemover) {
-                    Icon(Icons.Filled.Delete, contentDescription = "Remover item")
-                }
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CampoDecimal(item.quantidade, "Quantidade", Modifier.weight(1f)) {
-                onAlterar(item.copy(quantidade = it))
-            }
-            CampoDecimal(item.valorUnitario, "Valor unitário", Modifier.weight(1f)) {
-                onAlterar(item.copy(valorUnitario = it))
-            }
-        }
-    }
-}
-
-@Composable
-private fun CampoDecimal(
-    valor: String,
-    rotulo: String,
-    modifier: Modifier,
-    onAlterar: (String) -> Unit
-) {
-    OutlinedTextField(
-        value = valor,
-        onValueChange = onAlterar,
-        label = { Text(rotulo) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        singleLine = true,
-        modifier = modifier
+            ) { Text("Adicionar") }
+        },
+        dismissButton = { TextButton(onClick = onCancelar) { Text("Cancelar") } }
     )
-}
-
-@Composable
-private fun SeletorFormaPagamento(
-    forma: FormaPagamento,
-    onFormaAlterada: (FormaPagamento) -> Unit
-) {
-    var aberto by remember { mutableStateOf(false) }
-    Column {
-        TextButton(onClick = { aberto = true }) {
-            Text("Forma de pagamento: ${forma.rotulo()}")
-        }
-        DropdownMenu(expanded = aberto, onDismissRequest = { aberto = false }) {
-            FormaPagamento.entries.forEach { opcao ->
-                DropdownMenuItem(text = { Text(opcao.rotulo()) }, onClick = {
-                    onFormaAlterada(opcao)
-                    aberto = false
-                })
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -284,7 +324,12 @@ internal fun SeletorDataDialog(
         confirmButton = {
             TextButton(onClick = {
                 estado.selectedDateMillis?.let { millis ->
-                    onConfirmar(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toEpochDay())
+                    onConfirmar(
+                        Instant.ofEpochMilli(millis)
+                            .atZone(ZoneOffset.UTC)
+                            .toLocalDate()
+                            .toEpochDay()
+                    )
                 }
             }) { Text("Confirmar") }
         },

@@ -155,7 +155,9 @@ class ClienteDetalheViewModel @Inject constructor(
             vendasSelecionadas.value = dados.vendas
                 .filter {
                     it.venda.status == StatusPagamento.PENDENTE &&
-                        it.venda.vencimentoEpochDay?.let { data -> data <= hoje } == true
+                        it.venda.vencimentoEpochDay?.let { vencimento ->
+                            vencimento <= hoje
+                        } == true
                 }
                 .mapTo(mutableSetOf()) { it.venda.id }
             cobrancaAberta.value = true
@@ -167,9 +169,9 @@ class ClienteDetalheViewModel @Inject constructor(
         vendasSelecionadas.value = emptySet()
     }
 
-    fun alternarVendaCobranca(vendaId: Long) {
+    fun definirVendaCobranca(vendaId: Long, selecionada: Boolean) {
         vendasSelecionadas.value = vendasSelecionadas.value.toMutableSet().apply {
-            if (!add(vendaId)) remove(vendaId)
+            if (selecionada) add(vendaId) else remove(vendaId)
         }
     }
 

@@ -26,8 +26,8 @@
   date.
 - `ClienteUiModel.saldoPendente` sums only `VendaComItens` rows with
   `StatusPagamento.PENDENTE` for that client.
-- Starting a charge preselects pending sales whose due date is today or
-  overdue. Selection can be changed or expanded to every pending sale, and
+- Starting a charge preselects overdue pending sales and those due today.
+  Selection can be changed or expanded to every pending sale, and
   only selected sales compose the WhatsApp total.
 - `ResumoViewModel` computes the current calendar month window
   (`YearMonth.now()`) once per ViewModel instance and aggregates:

@@ -187,40 +187,6 @@ class ClienteDetalheViewModelTest {
             val inicial = awaitItem().let { estado ->
                 if (estado.aberta) estado else awaitItem()
             }
-
-            @Test
-            fun `confirm charge emits message with selected sales only`() = runTest {
-                val contexto = criarContexto()
-                val hoje = LocalDate.now().toEpochDay()
-                contexto.repository.salvarVendaTeste(
-                    contexto.clienteId,
-                    "Selecionada",
-                    1_500,
-                    StatusPagamento.PENDENTE,
-                    VendaTeste(vencimentoEpochDay = hoje)
-                )
-                contexto.repository.salvarVendaTeste(
-                    contexto.clienteId,
-                    "Não selecionada",
-                    4_000,
-                    StatusPagamento.PENDENTE,
-                    VendaTeste(vencimentoEpochDay = hoje + 1)
-                )
-
-                contexto.viewModel.cobranca.test {
-                    awaitItem()
-                    contexto.viewModel.iniciarCobranca()
-                    val aberta = awaitItem().let { if (it.aberta) it else awaitItem() }
-                    assertEquals(1_500L, aberta.totalSelecionadoCentavos)
-
-                    val envio = async { contexto.viewModel.enviosCobranca.first() }
-                    contexto.viewModel.confirmarCobranca()
-                    val mensagem = envio.await()
-                    assertTrue(mensagem.mensagem.contains("Selecionada"))
-                    assertFalse(mensagem.mensagem.contains("Não selecionada"))
-                    assertTrue(mensagem.mensagem.contains("R$"))
-                }
-            }
             assertEquals(2, inicial.vendas.count(VendaCobrancaUiModel::selecionada))
             assertEquals(3_000L, inicial.totalSelecionadoCentavos)
 
@@ -232,9 +198,79 @@ class ClienteDetalheViewModelTest {
             val futura = todas.vendas.single {
                 it.venda.venda.vencimentoEpochDay == hoje + 1
             }
-            contexto.viewModel.alternarVendaCobranca(futura.venda.venda.id)
+            contexto.viewModel.definirVendaCobranca(
+                futura.venda.venda.id,
+                selecionada = false
+            )
             val ajustada = awaitItem()
             assertEquals(3_000L, ajustada.totalSelecionadoCentavos)
+
+            val atrasada = ajustada.vendas.single {
+                it.venda.venda.vencimentoEpochDay == hoje - 1
+            }
+            contexto.viewModel.definirVendaCobranca(
+                atrasada.venda.venda.id,
+                selecionada = false
+            )
+            assertEquals(2_000L, awaitItem().totalSelecionadoCentavos)
+        }
+    }
+
+    @Test
+    fun `confirm charge emits message with selected sales only`() = runTest {
+        val contexto = criarContexto()
+        val hoje = LocalDate.now().toEpochDay()
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Selecionada",
+            1_500,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje)
+        )
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Não selecionada",
+            4_000,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje + 1)
+        )
+
+        contexto.viewModel.cobranca.test {
+            awaitItem()
+            contexto.viewModel.iniciarCobranca()
+            val aberta = awaitItem().let { if (it.aberta) it else awaitItem() }
+            assertEquals(1_500L, aberta.totalSelecionadoCentavos)
+
+            val envio = async { contexto.viewModel.enviosCobranca.first() }
+            contexto.viewModel.confirmarCobranca()
+            val mensagem = envio.await()
+            assertTrue(mensagem.mensagem.contains("Selecionada"))
+            assertFalse(mensagem.mensagem.contains("Não selecionada"))
+            assertTrue(mensagem.mensagem.contains("R$"))
+        }
+    }
+
+    @Test
+    fun `charge leaves every future sale unselected`() = runTest {
+        val contexto = criarContexto()
+        val hoje = LocalDate.now().toEpochDay()
+        listOf(1L, 4L, 21L).forEachIndexed { indice, dias ->
+            contexto.repository.salvarVendaTeste(
+                contexto.clienteId,
+                "Futura ${indice + 1}",
+                (indice + 1) * 1_000L,
+                StatusPagamento.PENDENTE,
+                VendaTeste(vencimentoEpochDay = hoje + dias)
+            )
+        }
+
+        contexto.viewModel.cobranca.test {
+            awaitItem()
+            contexto.viewModel.iniciarCobranca()
+            val estado = awaitItem().let { if (it.aberta) it else awaitItem() }
+            assertTrue(estado.vendas.none(VendaCobrancaUiModel::selecionada))
+            assertEquals(0L, estado.totalSelecionadoCentavos)
+            assertFalse(estado.todasSelecionadas)
         }
     }
 

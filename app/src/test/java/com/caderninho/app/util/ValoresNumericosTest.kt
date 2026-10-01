@@ -7,6 +7,13 @@ import org.junit.Test
 class ValoresNumericosTest {
 
     @Test
+    fun `formatarMoedaDigitada applies Brazilian currency separators`() {
+        assertEquals("R$ 0,01", ValoresNumericos.formatarMoedaDigitada("1"))
+        assertEquals("R$ 12,34", ValoresNumericos.formatarMoedaDigitada("R$ 1,234"))
+        assertEquals("R$ 1.234,56", ValoresNumericos.formatarMoedaDigitada("123456"))
+    }
+
+    @Test
     fun `centavos parses Brazilian and dot decimal values`() {
         assertEquals(123_456L, ValoresNumericos.centavos("R$ 1.234,56"))
         assertEquals(1_050L, ValoresNumericos.centavos("10.50"))
