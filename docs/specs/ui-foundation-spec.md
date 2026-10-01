@@ -28,6 +28,9 @@
   Brazilian currency input (`R$`, thousands dots and decimal comma).
 - Sale cards show only date, status and total. Tapping a card opens its
   scrollable item breakdown with quantity, unit value and subtotal.
+- The sale list is the client's history. Material 3 filter chips switch
+  between All, Pending and Paid; empty results explain the active filter
+  instead of showing a generic empty screen.
 - Charging opens a selector for pending sales. Overdue and today-due sales
   start selected, future sales remain visible and unselected, select-all is
   available, and the displayed total reacts to the explicit selection before

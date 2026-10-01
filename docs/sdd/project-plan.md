@@ -17,7 +17,7 @@
 | 4. Resumo mensal | Completed: monthly received/pending totals by payment method |
 | 5. Busca e CPF | In progress: client search by name/phone and optional validated CPF |
 | 6. Itens, vencimento e lembrete | In progress: itemized sales, expected payment date, grouped local notification and selective user-confirmed WhatsApp hand-off |
-| 7. Histórico do cliente | Planned: chronological sales with All, Pending and Paid filters |
+| 7. Histórico do cliente | Completed: chronological sales with All, Pending and Paid filters |
 | 8. Sincronização Firebase | Planned: optional cloud backup/sync on top of the local Room source of truth |
 | 9. Recibo e exportação | Planned: shareable receipt per sale/cliente |
 | 10. Hardening | Planned: requirement audit, final validation and documentation |

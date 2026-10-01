@@ -48,6 +48,17 @@ data class EnvioCobranca(
     val mensagem: String
 )
 
+enum class FiltroHistorico {
+    TODOS,
+    PENDENTES,
+    PAGOS
+}
+
+data class HistoricoUiState(
+    val filtro: FiltroHistorico = FiltroHistorico.TODOS,
+    val vendas: List<VendaComItens> = emptyList()
+)
+
 @HiltViewModel
 class ClienteDetalheViewModel @Inject constructor(
     private val repository: CaderninhoRepository,
@@ -86,6 +97,33 @@ class ClienteDetalheViewModel @Inject constructor(
                 todasSelecionadas = vendasUi.isNotEmpty() && vendasUi.all(VendaCobrancaUiModel::selecionada)
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CobrancaUiState())
+
+    private val filtroHistorico = MutableStateFlow(FiltroHistorico.TODOS)
+    val historico: StateFlow<HistoricoUiState> =
+        combine(clienteComVendas, filtroHistorico) { dados, filtro ->
+            val vendas = dados?.vendas.orEmpty()
+                .asSequence()
+                .filter { venda ->
+                    when (filtro) {
+                        FiltroHistorico.TODOS -> true
+                        FiltroHistorico.PENDENTES ->
+                            venda.venda.status == StatusPagamento.PENDENTE
+                        FiltroHistorico.PAGOS ->
+                            venda.venda.status == StatusPagamento.PAGO
+                    }
+                }
+                .sortedByDescending { it.venda.criadoEm }
+                .toList()
+            HistoricoUiState(filtro = filtro, vendas = vendas)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            HistoricoUiState()
+        )
+
+    val selecionarFiltroHistorico: (FiltroHistorico) -> Unit = { filtro ->
+        filtroHistorico.value = filtro
+    }
 
     fun registrarVenda(
         itensFormulario: List<ItemVendaFormulario>,
