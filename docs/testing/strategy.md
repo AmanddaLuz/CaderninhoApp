@@ -32,6 +32,8 @@
   when the database no longer has a pending sale for that group.
 - Charge selection defaults to overdue and today-due sales, supports
   select-all and totals only selected sales.
+- Client history defaults to All, sorts newest first and filters Pending/Paid
+  reactively when a sale changes status.
 
 ## Gates
 

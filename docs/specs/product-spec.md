@@ -25,6 +25,8 @@ payment reminders through WhatsApp.
    sales.
 8. Monthly summary: total received, total pending and totals by payment
    method.
+9. Client history in reverse chronological order with All, Pending and Paid
+   status filters.
 
 ## Critical rules
 
@@ -49,6 +51,8 @@ payment reminders through WhatsApp.
   worker posts a notification and requires an explicit user tap.
 - The monthly summary only aggregates sales created within the current
   calendar month.
+- Client history defaults to All and keeps the selected status filter while
+  Room emits sale updates.
 
 ## Payment states
 
