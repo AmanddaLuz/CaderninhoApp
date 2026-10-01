@@ -15,6 +15,7 @@ sealed class Destino(val rota: String, val titulo: String, val icone: ImageVecto
     }
 }
 
-const val ROTA_DETALHE_CLIENTE = "cliente/{clienteId}"
+const val ROTA_DETALHE_CLIENTE = "cliente/{clienteId}?cobrar={cobrar}"
 
-fun rotaDetalheCliente(clienteId: Long) = "cliente/$clienteId"
+fun rotaDetalheCliente(clienteId: Long, cobrar: Boolean = false) =
+    "cliente/$clienteId?cobrar=$cobrar"

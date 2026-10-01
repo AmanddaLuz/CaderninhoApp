@@ -8,7 +8,8 @@ data class ClienteComVendas(
     @Embedded val cliente: ClienteEntity,
     @Relation(
         parentColumn = "id",
-        entityColumn = "clienteId"
+        entityColumn = "clienteId",
+        entity = VendaEntity::class
     )
-    val vendas: List<VendaEntity>
+    val vendas: List<VendaComItens>
 )

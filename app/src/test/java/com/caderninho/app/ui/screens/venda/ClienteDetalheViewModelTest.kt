@@ -7,11 +7,19 @@ import com.caderninho.app.data.repository.CaderninhoRepository
 import com.caderninho.app.domain.model.FormaPagamento
 import com.caderninho.app.domain.model.StatusPagamento
 import com.caderninho.app.fakes.FakeClienteDao
+import com.caderninho.app.fakes.FakeLembreteCobrancaScheduler
 import com.caderninho.app.fakes.FakeVendaDao
 import com.caderninho.app.fakes.MainDispatcherRule
+import com.caderninho.app.fakes.VendaTeste
+import com.caderninho.app.fakes.salvarVendaTeste
+import com.caderninho.app.notification.LembreteCobrancaCoordinator
+import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -24,84 +32,285 @@ class ClienteDetalheViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private suspend fun criarViewModel(): Pair<ClienteDetalheViewModel, CaderninhoRepository> {
+    private suspend fun criarContexto(): TestContext {
         val vendaDao = FakeVendaDao()
         val clienteDao = FakeClienteDao(vendaDao)
         val repositorio = CaderninhoRepository(clienteDao, vendaDao)
-        val clienteId = repositorio.salvarCliente(ClienteEntity(nome = "Ana", telefone = "11977776666"))
-        val viewModel = ClienteDetalheViewModel(repositorio, SavedStateHandle(mapOf("clienteId" to clienteId)))
-        return viewModel to repositorio
+        val scheduler = FakeLembreteCobrancaScheduler()
+        val clienteId = repositorio.salvarCliente(
+            ClienteEntity(nome = "Ana", telefone = "11977776666")
+        )
+        val viewModel = ClienteDetalheViewModel(
+            repository = repositorio,
+            lembretes = LembreteCobrancaCoordinator(repositorio, scheduler),
+            savedStateHandle = SavedStateHandle(
+                mapOf("clienteId" to clienteId, "cobrar" to false)
+            )
+        )
+        return TestContext(viewModel, repositorio, scheduler, clienteId)
     }
 
     @Test
-    fun `registrarVenda ignores a non positive value`() = runTest {
-        val (viewModel, _) = criarViewModel()
+    fun `registrarVenda rejects invalid items and pending sale without due date`() = runTest {
+        val contexto = criarContexto()
 
-        viewModel.registrarVenda("Corte", 0.0, FormaPagamento.DINHEIRO, jaPago = false)
+        val itemInvalido = listOf(ItemVendaFormulario("", "0", ""))
+        assertFalse(
+            contexto.viewModel.registrarVenda(
+                itemInvalido,
+                FormaPagamento.DINHEIRO,
+                jaPago = false,
+                vencimentoEpochDay = null
+            )
+        )
+        assertEquals(
+            "Preencha descrição, quantidade e valor de todos os itens.",
+            contexto.viewModel.erroFormulario.value
+        )
 
-        viewModel.clienteComVendas.test {
-            skipItems(1)
-            assertTrue(awaitItem()?.vendas.orEmpty().isEmpty())
-        }
+        assertFalse(
+            contexto.viewModel.registrarVenda(
+                itemValido(),
+                FormaPagamento.DINHEIRO,
+                jaPago = false,
+                vencimentoEpochDay = null
+            )
+        )
+        assertEquals(
+            "Informe a data prevista de pagamento.",
+            contexto.viewModel.erroFormulario.value
+        )
     }
 
     @Test
-    fun `registrarVenda marks an already paid sale with pagoEm`() = runTest {
-        val (viewModel, _) = criarViewModel()
+    fun `registrarVenda calculates item totals and schedules pending group`() = runTest {
+        val contexto = criarContexto()
+        val vencimento = LocalDate.now().plusDays(2).toEpochDay()
 
-        viewModel.registrarVenda("Corte", 40.0, FormaPagamento.PIX, jaPago = true)
+        contexto.viewModel.clienteComVendas.test {
+            awaitItem()
+            assertTrue(
+                contexto.viewModel.registrarVenda(
+                    itensFormulario = listOf(
+                        ItemVendaFormulario("Arroz", "2", "12,50"),
+                        ItemVendaFormulario("Queijo", "0,5", "40,00")
+                    ),
+                    forma = FormaPagamento.PIX,
+                    jaPago = false,
+                    vencimentoEpochDay = vencimento
+                )
+            )
 
-        viewModel.clienteComVendas.test {
-            skipItems(1)
-            val venda = awaitItem()?.vendas?.single()
-            assertEquals(StatusPagamento.PAGO, venda?.status)
-            assertNotNull(venda?.pagoEm)
-        }
-    }
-
-    @Test
-    fun `marcarComoPendente clears pagoEm`() = runTest {
-        val (viewModel, _) = criarViewModel()
-        viewModel.registrarVenda("Corte", 40.0, FormaPagamento.PIX, jaPago = true)
-
-        viewModel.clienteComVendas.test {
-            skipItems(1)
             val venda = awaitItem()!!.vendas.single()
-            viewModel.marcarComoPendente(venda)
-
-            val atualizado = awaitItem()!!.vendas.single()
-            assertEquals(StatusPagamento.PENDENTE, atualizado.status)
-            assertNull(atualizado.pagoEm)
+            assertEquals(4_500L, venda.totalCentavos)
+            assertEquals(2, venda.itens.size)
+            assertEquals(vencimento, venda.venda.vencimentoEpochDay)
+            assertEquals(listOf(contexto.clienteId to vencimento), contexto.scheduler.agendados)
         }
     }
 
     @Test
-    fun `marcarComoPago sets pagoEm`() = runTest {
-        val (viewModel, _) = criarViewModel()
-        viewModel.registrarVenda("Corte", 40.0, FormaPagamento.PIX, jaPago = false)
+    fun `paid sale stamps pagoEm and does not schedule a reminder`() = runTest {
+        val contexto = criarContexto()
 
-        viewModel.clienteComVendas.test {
-            skipItems(1)
-            val venda = awaitItem()!!.vendas.single()
-            viewModel.marcarComoPago(venda)
+        contexto.viewModel.clienteComVendas.test {
+            awaitItem()
+            assertTrue(
+                contexto.viewModel.registrarVenda(
+                    itemValido(),
+                    FormaPagamento.PIX,
+                    jaPago = true,
+                    vencimentoEpochDay = null
+                )
+            )
 
-            val atualizado = awaitItem()!!.vendas.single()
-            assertEquals(StatusPagamento.PAGO, atualizado.status)
-            assertNotNull(atualizado.pagoEm)
+            val venda = awaitItem()!!.vendas.single().venda
+            assertEquals(StatusPagamento.PAGO, venda.status)
+            assertNotNull(venda.pagoEm)
+            assertTrue(contexto.scheduler.agendados.isEmpty())
         }
     }
 
     @Test
-    fun `removerVenda deletes the sale`() = runTest {
-        val (viewModel, _) = criarViewModel()
-        viewModel.registrarVenda("Corte", 40.0, FormaPagamento.PIX, jaPago = false)
+    fun `marking the only pending sale paid cancels its grouped reminder`() = runTest {
+        val contexto = criarContexto()
+        val vencimento = LocalDate.now().plusDays(1).toEpochDay()
 
-        viewModel.clienteComVendas.test {
-            skipItems(1)
-            val venda = awaitItem()!!.vendas.single()
-            viewModel.removerVenda(venda)
+        contexto.viewModel.clienteComVendas.test {
+            awaitItem()
+            contexto.viewModel.registrarVenda(
+                itemValido(),
+                FormaPagamento.PIX,
+                jaPago = false,
+                vencimentoEpochDay = vencimento
+            )
+            val venda = awaitItem()!!.vendas.single().venda
 
-            assertTrue(awaitItem()!!.vendas.isEmpty())
+            contexto.viewModel.marcarComoPago(venda)
+            val atualizada = awaitItem()!!.vendas.single().venda
+            assertEquals(StatusPagamento.PAGO, atualizada.status)
+            assertNotNull(atualizada.pagoEm)
+            assertEquals(vencimento, atualizada.vencimentoEpochDay)
+            assertEquals(listOf(contexto.clienteId to vencimento), contexto.scheduler.cancelados)
         }
     }
+
+    @Test
+    fun `charge preselects overdue and today sales and totals only selected sales`() = runTest {
+        val contexto = criarContexto()
+        val hoje = LocalDate.now().toEpochDay()
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Atrasada",
+            1_000,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje - 1)
+        )
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Hoje",
+            2_000,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje)
+        )
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Futura",
+            3_000,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje + 1)
+        )
+
+        contexto.viewModel.cobranca.test {
+            awaitItem()
+            contexto.viewModel.iniciarCobranca()
+            val inicial = awaitItem().let { estado ->
+                if (estado.aberta) estado else awaitItem()
+            }
+            assertEquals(2, inicial.vendas.count(VendaCobrancaUiModel::selecionada))
+            assertEquals(3_000L, inicial.totalSelecionadoCentavos)
+
+            contexto.viewModel.selecionarTodasCobrancas(true)
+            val todas = awaitItem()
+            assertTrue(todas.todasSelecionadas)
+            assertEquals(6_000L, todas.totalSelecionadoCentavos)
+
+            val futura = todas.vendas.single {
+                it.venda.venda.vencimentoEpochDay == hoje + 1
+            }
+            contexto.viewModel.definirVendaCobranca(
+                futura.venda.venda.id,
+                selecionada = false
+            )
+            val ajustada = awaitItem()
+            assertEquals(3_000L, ajustada.totalSelecionadoCentavos)
+
+            val atrasada = ajustada.vendas.single {
+                it.venda.venda.vencimentoEpochDay == hoje - 1
+            }
+            contexto.viewModel.definirVendaCobranca(
+                atrasada.venda.venda.id,
+                selecionada = false
+            )
+            assertEquals(2_000L, awaitItem().totalSelecionadoCentavos)
+        }
+    }
+
+    @Test
+    fun `confirm charge emits message with selected sales only`() = runTest {
+        val contexto = criarContexto()
+        val hoje = LocalDate.now().toEpochDay()
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Selecionada",
+            1_500,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje)
+        )
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Não selecionada",
+            4_000,
+            StatusPagamento.PENDENTE,
+            VendaTeste(vencimentoEpochDay = hoje + 1)
+        )
+
+        contexto.viewModel.cobranca.test {
+            awaitItem()
+            contexto.viewModel.iniciarCobranca()
+            val aberta = awaitItem().let { if (it.aberta) it else awaitItem() }
+            assertEquals(1_500L, aberta.totalSelecionadoCentavos)
+
+            val envio = async { contexto.viewModel.enviosCobranca.first() }
+            contexto.viewModel.confirmarCobranca()
+            val mensagem = envio.await()
+            assertTrue(mensagem.mensagem.contains("Selecionada"))
+            assertFalse(mensagem.mensagem.contains("Não selecionada"))
+            assertTrue(mensagem.mensagem.contains("R$"))
+        }
+    }
+
+    @Test
+    fun `charge leaves every future sale unselected`() = runTest {
+        val contexto = criarContexto()
+        val hoje = LocalDate.now().toEpochDay()
+        listOf(1L, 4L, 21L).forEachIndexed { indice, dias ->
+            contexto.repository.salvarVendaTeste(
+                contexto.clienteId,
+                "Futura ${indice + 1}",
+                (indice + 1) * 1_000L,
+                StatusPagamento.PENDENTE,
+                VendaTeste(vencimentoEpochDay = hoje + dias)
+            )
+        }
+
+        contexto.viewModel.cobranca.test {
+            awaitItem()
+            contexto.viewModel.iniciarCobranca()
+            val estado = awaitItem().let { if (it.aberta) it else awaitItem() }
+            assertTrue(estado.vendas.none(VendaCobrancaUiModel::selecionada))
+            assertEquals(0L, estado.totalSelecionadoCentavos)
+            assertFalse(estado.todasSelecionadas)
+        }
+    }
+
+    @Test
+    fun `marking sale pending requires a non past date and clears pagoEm`() = runTest {
+        val contexto = criarContexto()
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Paga",
+            2_000,
+            StatusPagamento.PAGO,
+            VendaTeste(pagoEm = System.currentTimeMillis())
+        )
+
+        contexto.viewModel.clienteComVendas.test {
+            val primeiro = awaitItem()
+            val venda = (primeiro ?: awaitItem())!!.vendas.single().venda
+            assertFalse(
+                contexto.viewModel.marcarComoPendente(
+                    venda,
+                    LocalDate.now().minusDays(1).toEpochDay()
+                )
+            )
+            val vencimento = LocalDate.now().plusDays(1).toEpochDay()
+            assertTrue(contexto.viewModel.marcarComoPendente(venda, vencimento))
+
+            val atualizada = awaitItem()!!.vendas.single().venda
+            assertEquals(StatusPagamento.PENDENTE, atualizada.status)
+            assertNull(atualizada.pagoEm)
+            assertEquals(vencimento, atualizada.vencimentoEpochDay)
+        }
+    }
+
+    private fun itemValido() =
+        listOf(ItemVendaFormulario("Corte", "1", "40,00"))
+
+    private data class TestContext(
+        val viewModel: ClienteDetalheViewModel,
+        val repository: CaderninhoRepository,
+        val scheduler: FakeLembreteCobrancaScheduler,
+        val clienteId: Long
+    )
 }

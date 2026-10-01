@@ -14,6 +14,8 @@ object Formatadores {
 
     fun moeda(valor: Double): String = moeda.format(valor)
 
+    fun moedaCentavos(valorCentavos: Long): String = moeda(valorCentavos / 100.0)
+
     fun dataCurta(timestampMillis: Long): String =
         dataCurta.format(Instant.ofEpochMilli(timestampMillis))
 }

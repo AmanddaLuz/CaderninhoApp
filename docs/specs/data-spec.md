@@ -2,11 +2,14 @@
 
 ## Persistence
 
-- Room (`CaderninhoDatabase`, version 2) is the single local source of truth.
-- `ClienteEntity` and `VendaEntity` are the only tables; `VendaEntity` has a
-  cascading foreign key to `ClienteEntity` and an index on `clienteId`.
+- Room (`CaderninhoDatabase`, version 3) is the single local source of truth.
+- `ClienteEntity`, `VendaEntity` and `VendaItemEntity` are the persisted
+  tables. Sales cascade from clients, and items cascade from sales.
 - `ClienteEntity.cpf` is nullable and has a unique index. Migration 1 to 2
   adds it without changing existing rows.
+- Migration 2 to 3 rebuilds the sale table with an optional expected-payment
+  epoch day and converts every legacy description/value into one quantity-1
+  item with its value rounded to integer cents.
 - `Converters` maps `FormaPagamento`/`StatusPagamento` enums to their `name`
   string for storage.
 - `ClienteComVendas` is a `@Relation` projection used for list and detail

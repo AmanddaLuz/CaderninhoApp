@@ -24,7 +24,10 @@ object DatabaseModule {
             CaderninhoDatabase::class.java,
             CaderninhoDatabase.DATABASE_NAME
         )
-            .addMigrations(CaderninhoDatabase.MIGRATION_1_2)
+            .addMigrations(
+                CaderninhoDatabase.MIGRATION_1_2,
+                CaderninhoDatabase.MIGRATION_2_3
+            )
             .build()
 
     @Provides

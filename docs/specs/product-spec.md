@@ -12,13 +12,18 @@ payment reminders through WhatsApp.
    and optional note.
 2. Client list showing an "em dia" or pending-balance badge, with search by
    name or phone.
-3. Register a sale/service with description, value, payment method and an
-   expected payment date when pending.
-4. Mark a sale as paid or pending (fiado) at any time.
-5. Schedule a local reminder for the expected payment date. The shopkeeper
+3. Register a sale/service with one or more item lines. Each line has a
+   description, quantity and unit value; the sale total is calculated from
+   those lines.
+4. A pending sale records an expected payment date.
+5. Mark a sale as paid or pending (fiado) at any time.
+6. Schedule one local reminder per client and expected-payment date. The shopkeeper
    taps the notification to open a pre-filled WhatsApp charge and manually
    confirms sending it.
-6. Monthly summary: total received, total pending and totals by payment
+7. Select which pending sales to charge. Overdue sales and sales due today
+   start selected, and the shopkeeper may select, clear or select all pending
+   sales.
+8. Monthly summary: total received, total pending and totals by payment
    method.
 
 ## Critical rules
@@ -28,12 +33,16 @@ payment reminders through WhatsApp.
   unique when provided.
 - Client search is case- and accent-insensitive for names and ignores phone
   formatting.
-- A sale/service requires a positive value and a non-blank description.
+- A sale/service requires at least one item with a non-blank description,
+  positive quantity and positive unit value.
+- The sale total is the sum of each rounded item subtotal (`quantity × unit
+  value`), with monetary values persisted in integer cents.
 - A pending sale requires an expected payment date.
 - Pending balance is the sum of a client's sales with `PENDENTE` status.
 - Marking a sale as paid stamps `pagoEm` with the current time; marking it as
   pending clears `pagoEm`.
-- The WhatsApp charge only appears when the client has a pending balance.
+- The WhatsApp charge only appears when the client has pending sales and uses
+  only the explicitly selected sales in its message and total.
 - The WhatsApp charge normalizes the phone to `55<ddd><numero>` and never logs
   the message content.
 - WhatsApp is never launched directly from background work. The scheduled

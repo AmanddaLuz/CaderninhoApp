@@ -21,7 +21,7 @@ import javax.inject.Inject
 /** Saldo pendente (fiado) de um cliente, calculado a partir das vendas em aberto. */
 data class ClienteUiModel(
     val cliente: ClienteEntity,
-    val saldoPendente: Double
+    val saldoPendenteCentavos: Long
 )
 
 data class ClientesUiState(
@@ -102,8 +102,10 @@ class ClientesViewModel @Inject constructor(
     }
 
     private fun ClienteComVendas.toUiModel(): ClienteUiModel {
-        val saldo = vendas.filter { it.status == StatusPagamento.PENDENTE }.sumOf { it.valor }
-        return ClienteUiModel(cliente = cliente, saldoPendente = saldo)
+        val saldo = vendas
+            .filter { it.venda.status == StatusPagamento.PENDENTE }
+            .sumOf { it.totalCentavos }
+        return ClienteUiModel(cliente = cliente, saldoPendenteCentavos = saldo)
     }
 
     private fun ClienteUiModel.correspondeA(termo: String): Boolean {

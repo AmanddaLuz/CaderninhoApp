@@ -1,13 +1,13 @@
 package com.caderninho.app.ui.screens.clientes
 
 import com.caderninho.app.data.local.ClienteEntity
-import com.caderninho.app.data.local.VendaEntity
 import com.caderninho.app.data.repository.CaderninhoRepository
-import com.caderninho.app.domain.model.FormaPagamento
 import com.caderninho.app.domain.model.StatusPagamento
 import com.caderninho.app.fakes.FakeClienteDao
 import com.caderninho.app.fakes.FakeVendaDao
 import com.caderninho.app.fakes.MainDispatcherRule
+import com.caderninho.app.fakes.VendaTeste
+import com.caderninho.app.fakes.salvarVendaTeste
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -57,38 +57,32 @@ class ClientesViewModelTest {
         val item = viewModel.uiState.value.clientes.single()
         assertEquals("Maria", item.cliente.nome)
         assertEquals("52998224725", item.cliente.cpf)
-        assertEquals(0.0, item.saldoPendente, 0.0)
+        assertEquals(0L, item.saldoPendenteCentavos)
     }
 
     @Test
     fun `saldoPendente sums only pending sales for a client`() = runTest {
         val repositorio = criarRepositorio()
         val clienteId = repositorio.salvarCliente(ClienteEntity(nome = "Joao", telefone = "11988887777"))
-        repositorio.salvarVenda(
-            VendaEntity(
-                clienteId = clienteId,
-                descricao = "Corte",
-                valor = 30.0,
-                formaPagamento = FormaPagamento.DINHEIRO,
-                status = StatusPagamento.PENDENTE
-            )
+        repositorio.salvarVendaTeste(
+            clienteId = clienteId,
+            descricao = "Corte",
+            valorCentavos = 3_000,
+            status = StatusPagamento.PENDENTE
         )
-        repositorio.salvarVenda(
-            VendaEntity(
-                clienteId = clienteId,
-                descricao = "Manicure",
-                valor = 20.0,
-                formaPagamento = FormaPagamento.PIX,
-                status = StatusPagamento.PAGO,
-                pagoEm = System.currentTimeMillis()
-            )
+        repositorio.salvarVendaTeste(
+            clienteId = clienteId,
+            descricao = "Manicure",
+            valorCentavos = 2_000,
+            status = StatusPagamento.PAGO,
+            dados = VendaTeste(pagoEm = System.currentTimeMillis())
         )
 
         val viewModel = ClientesViewModel(repositorio)
         advanceUntilIdle()
 
         val item = viewModel.uiState.value.clientes.single()
-        assertEquals(30.0, item.saldoPendente, 0.0)
+        assertEquals(3_000L, item.saldoPendenteCentavos)
     }
 
     @Test

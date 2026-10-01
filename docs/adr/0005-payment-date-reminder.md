@@ -5,14 +5,19 @@
 ## Decision
 
 - A pending sale stores an expected payment date.
-- WorkManager schedules one unique, deferrable job per sale for 09:00 in the
-  device's local time on that date.
+- WorkManager schedules one unique, deferrable job per client/date for 09:00
+  in the device's local time, grouping every pending sale due then.
 - When due, background work posts a local notification. It never starts
   WhatsApp or another activity directly.
 - Tapping the notification opens the app's existing `wa.me` hand-off with a
   pre-filled charge. The shopkeeper explicitly confirms sending in WhatsApp.
-- Paying or removing a sale cancels its scheduled reminder. Returning a sale
-  to pending requires a future expected payment date and schedules a new job.
+- Paying or removing a sale reconciles its client/date reminder: the job is
+  cancelled only when no pending sale remains in that group. Returning a sale
+  to pending requires an expected payment date and schedules its group.
+- The charge selector lists every pending sale, preselects overdue and
+  today-due sales,
+  supports selection, clearing and select-all, and calculates the message total from
+  the final explicit selection.
 
 ## Rationale
 
