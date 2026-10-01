@@ -6,20 +6,32 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.caderninho.app.domain.model.PaymentMethod
 import com.caderninho.app.util.Formatters
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,31 +39,100 @@ fun SummaryScreen(viewModel: SummaryViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Resumo do mês") }) }
+        topBar = { TopAppBar(title = { Text("Resumo") }) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SummaryCard(title = "Recebido no mês", value = Formatters.currency(state.totalReceived))
-            SummaryCard(title = "Pendente (fiado)", value = Formatters.currency(state.totalPending))
-            SummaryCard(title = "Vendas/serviços registrados", value = state.saleCount.toString())
+            PeriodSelector(
+                selected = state.period,
+                onSelected = viewModel::selectPeriod
+            )
+            PeriodNavigation(
+                state = state,
+                onPrevious = viewModel::previousPeriod,
+                onNext = viewModel::nextPeriod,
+                onToday = viewModel::returnToToday
+            )
 
-            if (state.byPaymentMethod.isNotEmpty()) {
+            val periodLabel = if (state.period == SummaryPeriod.DAY) "dia" else "mês"
+            SummaryCard(
+                title = "Recebido no $periodLabel",
+                value = Formatters.currencyFromCents(state.totalReceivedCents)
+            )
+            SummaryCard(
+                title = "Pendente (fiado)",
+                value = Formatters.currencyFromCents(state.totalPendingCents)
+            )
+            SummaryCard(
+                title = "Vendas/serviços considerados",
+                value = state.saleCount.toString()
+            )
+
+            if (state.byPaymentMethodCents.isNotEmpty()) {
                 Text("Recebido por forma de pagamento", style = MaterialTheme.typography.titleMedium)
-                state.byPaymentMethod.forEach { (method, value) ->
+                state.byPaymentMethodCents.forEach { (method, valueCents) ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(method.label())
-                        Text(Formatters.currency(value))
+                        Text(Formatters.currencyFromCents(valueCents))
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PeriodSelector(
+    selected: SummaryPeriod,
+    onSelected: (SummaryPeriod) -> Unit
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        SummaryPeriod.entries.forEach { period ->
+            FilterChip(
+                selected = selected == period,
+                onClick = { onSelected(period) },
+                label = { Text(if (period == SummaryPeriod.DAY) "Dia" else "Mês") }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PeriodNavigation(
+    state: SummaryUiState,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onToday: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onPrevious) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Período anterior"
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(state.periodLabel(), style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = onToday) { Text("Hoje") }
+        }
+        IconButton(onClick = onNext) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Próximo período"
+            )
         }
     }
 }
@@ -64,6 +145,16 @@ private fun SummaryCard(title: String, value: String) {
             Text(value, style = MaterialTheme.typography.titleLarge)
         }
     }
+}
+
+private fun SummaryUiState.periodLabel(): String {
+    val pattern = when (period) {
+        SummaryPeriod.DAY -> "dd 'de' MMMM 'de' yyyy"
+        SummaryPeriod.MONTH -> "MMMM 'de' yyyy"
+    }
+    val locale = Locale.Builder().setLanguage("pt").setRegion("BR").build()
+    return selectedDate.format(DateTimeFormatter.ofPattern(pattern, locale))
+        .replaceFirstChar { it.titlecase(locale) }
 }
 
 private fun PaymentMethod.label(): String = when (this) {

@@ -45,6 +45,15 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
+    lint {
+        warningsAsErrors = true
+        disable += setOf(
+            "AndroidGradlePluginVersion",
+            "GradleDependency",
+            "NewerVersionAvailable",
+            "OldTargetApi"
+        )
+    }
 }
 
 dependencies {

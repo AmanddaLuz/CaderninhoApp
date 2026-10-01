@@ -21,7 +21,9 @@
 - - `pendingBalanceCents` only sums `PENDING` sales, never `PAID` ones.
 - Marking a sale as paid stamps `paidAt`; marking it pending clears it.
 - `SummaryViewModel` excludes sales outside the current calendar month.
-- `SummaryViewModel` groups `PAID` sales by `PaymentMethod` without double
+- Summary periods use `paidAt` for received sales, `createdAt` for pending
+  sales and exclusive end boundaries for both daily and monthly navigation.
+- `SummaryViewModel` groups received sales by `PaymentMethod` without double
   counting.
 - `WhatsAppLauncher` normalizes a 10/11-digit local number to `55<numero>` and
   leaves an already-prefixed `55` number untouched.
@@ -34,11 +36,15 @@
   select-all and totals only selected sales.
 - Client history defaults to All, sorts newest first and filters Pending/Paid
   reactively when a sale changes status.
+- Rescheduling rejects paid sales and dates that are not in the future,
+  cancels the previous reminder group and schedules the new one.
 
 ## Gates
 
-Android Lint and Detekt fail the build on errors. Kover requires at least 80%
-eligible line coverage; `ui/theme`, `ui/navigation`, `di`, Room DAOs, the
+Android Lint warnings and Detekt findings fail the build. Version-update
+advisories for SDKs, plugins and dependencies remain informational and are
+excluded from the Lint gate. Kover requires at least 80% eligible line
+coverage; `ui/theme`, `ui/navigation`, `di`, Room DAOs, the
 `LedgerDatabase` class, generated `*ScreenKt` Composable wrappers,
 feature dialog Composables, `LedgerApplication`, `MainActivity` and Android-only
 notification adapters (`Worker`, `NotificationManager`, WorkManager

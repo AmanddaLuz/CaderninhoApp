@@ -14,6 +14,9 @@
   constants to the legacy Portuguese strings already stored in version 3.
 - `ClientWithSales` is a `@Relation` projection used for list and detail
   screens; it is not a persisted table.
+- Summary queries include paid sales by `paidAt` and pending sales by
+  `createdAt`, using an exclusive period end to avoid double counting at day
+  and month boundaries.
 
 ## Repository
 

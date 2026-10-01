@@ -60,6 +60,7 @@ private data class ClientDetailActions(
     val charge: () -> Unit,
     val markPaid: (SaleEntity) -> Unit,
     val markPending: (SaleEntity) -> Unit,
+    val reschedule: (SaleEntity) -> Unit,
     val delete: (SaleEntity) -> Unit,
     val filterHistory: (HistoryFilter) -> Unit
 )
@@ -75,6 +76,7 @@ fun ClientDetailScreen(
     val context = LocalContext.current
     var showForm by remember { mutableStateOf(false) }
     var saleToMarkPending by remember { mutableStateOf<SaleEntity?>(null) }
+    var saleToReschedule by remember { mutableStateOf<SaleEntity?>(null) }
     val requestNotification = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { }
@@ -98,6 +100,7 @@ fun ClientDetailScreen(
                 charge = viewModel::startCharge,
                 markPaid = viewModel::markAsPaid,
                 markPending = { saleToMarkPending = it },
+                reschedule = { saleToReschedule = it },
                 delete = viewModel::deleteSale,
                 filterHistory = viewModel.selectHistoryFilter
             ),
@@ -139,6 +142,11 @@ fun ClientDetailScreen(
             },
             onCancel = { saleToMarkPending = null }
         )
+    }
+    saleToReschedule?.let { sale ->
+        RescheduleDateDialog(sale, viewModel::rescheduleDueDate) {
+            saleToReschedule = null
+        }
     }
 }
 
@@ -219,6 +227,7 @@ private fun SalesList(
                     sale = sale,
                     onMarkPaid = { actions.markPaid(sale.sale) },
                     onMarkPending = { actions.markPending(sale.sale) },
+                    onReschedule = { actions.reschedule(sale.sale) },
                     onDelete = { actions.delete(sale.sale) }
                 )
             }
@@ -281,6 +290,7 @@ private fun SaleCard(
     sale: SaleWithItems,
     onMarkPaid: () -> Unit,
     onMarkPending: () -> Unit,
+    onReschedule: () -> Unit,
     onDelete: () -> Unit
 ) {
     var isMenuOpen by remember { mutableStateOf(false) }
@@ -301,6 +311,15 @@ private fun SaleCard(
                 }
                 DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
                     val pending = sale.sale.status == PaymentStatus.PENDING
+                    if (pending) {
+                        DropdownMenuItem(
+                            text = { Text("Remarcar data") },
+                            onClick = {
+                                onReschedule()
+                                isMenuOpen = false
+                            }
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text(if (pending) "Marcar como pago" else "Marcar como pendente") },
                         onClick = {

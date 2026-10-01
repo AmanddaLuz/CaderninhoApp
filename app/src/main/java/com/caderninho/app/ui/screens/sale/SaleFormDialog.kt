@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.caderninho.app.data.local.SaleEntity
 import com.caderninho.app.domain.model.PaymentMethod
 import com.caderninho.app.util.NumericValues
 import java.time.Instant
@@ -313,12 +315,26 @@ private fun SaleItemDialog(
 internal fun DatePickerDialogField(
     title: String,
     initialDateEpochDay: Long,
+    minimumDateEpochDay: Long? = null,
     onConfirm: (Long) -> Unit,
     onCancel: () -> Unit
 ) {
     val initialMillis = LocalDate.ofEpochDay(initialDateEpochDay)
         .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-    val state = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+    val selectableDates = remember(minimumDateEpochDay) {
+        object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                minimumDateEpochDay == null ||
+                    Instant.ofEpochMilli(utcTimeMillis)
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalDate()
+                        .toEpochDay() >= minimumDateEpochDay
+        }
+    }
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = initialMillis,
+        selectableDates = selectableDates
+    )
     DatePickerDialog(
         onDismissRequest = onCancel,
         confirmButton = {
@@ -337,6 +353,24 @@ internal fun DatePickerDialogField(
     ) {
         DatePicker(state = state, title = { Text(title, modifier = Modifier.padding(16.dp)) })
     }
+}
+
+@Composable
+internal fun RescheduleDateDialog(
+    sale: SaleEntity,
+    onConfirm: (SaleEntity, Long) -> Boolean,
+    onCancel: () -> Unit
+) {
+    val tomorrow = LocalDate.now().plusDays(1).toEpochDay()
+    DatePickerDialogField(
+        title = "Remarcar data prevista",
+        initialDateEpochDay = sale.dueEpochDay?.coerceAtLeast(tomorrow) ?: tomorrow,
+        minimumDateEpochDay = tomorrow,
+        onConfirm = { date ->
+            if (onConfirm(sale, date)) onCancel()
+        },
+        onCancel = onCancel
+    )
 }
 
 internal fun LocalDate.formatDate(): String =

@@ -19,7 +19,7 @@
 | 6. Itens, vencimento e lembrete | Completed: itemized sales, expected payment date, grouped local notification and selective user-confirmed WhatsApp hand-off |
 | 7. Histórico do cliente | Completed: chronological sales with All, Pending and Paid filters |
 | 8. English code naming | Completed: English identifiers, files and packages with Portuguese UI copy and backward-compatible Room storage |
-| 9. Resumo diário e mensal | Planned: navigable daily/monthly periods, received totals by payment date and pending totals by creation date |
+| 9. Resumo diário e mensal | Completed: navigable daily/monthly periods, received totals by payment date, pending totals by creation date and pending-sale due-date rescheduling |
 | 10. Sincronização Firebase | Planned: optional cloud backup/sync on top of the local Room source of truth |
 | 11. Recibo e exportação | Planned: shareable receipt per sale/client |
 | 12. Hardening | Planned: requirement audit, final validation and documentation |

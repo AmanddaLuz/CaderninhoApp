@@ -7,47 +7,118 @@ import com.caderninho.app.data.repository.LedgerRepository
 import com.caderninho.app.domain.model.PaymentMethod
 import com.caderninho.app.domain.model.PaymentStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.YearMonth
 import javax.inject.Inject
 
-data class MonthlySummaryUiState(
-    val totalReceived: Double = 0.0,
-    val totalPending: Double = 0.0,
+enum class SummaryPeriod {
+    DAY,
+    MONTH
+}
+
+data class SummaryUiState(
+    val period: SummaryPeriod = SummaryPeriod.MONTH,
+    val selectedDate: LocalDate = LocalDate.now(),
+    val totalReceivedCents: Long = 0,
+    val totalPendingCents: Long = 0,
     val saleCount: Int = 0,
-    val byPaymentMethod: Map<PaymentMethod, Double> = emptyMap()
+    val byPaymentMethodCents: Map<PaymentMethod, Long> = emptyMap()
+)
+
+private data class SummarySelection(
+    val period: SummaryPeriod,
+    val date: LocalDate
+)
+
+private data class PeriodRange(
+    val start: Long,
+    val endExclusive: Long
 )
 
 @HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
 class SummaryViewModel @Inject constructor(
-    repository: LedgerRepository
+    private val repository: LedgerRepository
 ) : ViewModel() {
 
-    private val currentMonth = YearMonth.now()
     private val zone = ZoneId.systemDefault()
-    private val monthStart = currentMonth.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-    private val monthEnd = currentMonth.atEndOfMonth().atTime(23, 59, 59).atZone(zone).toInstant().toEpochMilli()
+    private val selection = MutableStateFlow(
+        SummarySelection(SummaryPeriod.MONTH, LocalDate.now())
+    )
 
-    val state: StateFlow<MonthlySummaryUiState> = repository
-        .observeSalesInPeriod(monthStart, monthEnd)
-        .map { it.toSummary() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MonthlySummaryUiState())
+    val state: StateFlow<SummaryUiState> = selection
+        .flatMapLatest { selected ->
+            val range = selected.toRange(zone)
+            repository.observeSalesForSummary(range.start, range.endExclusive)
+                .map { sales -> sales.toSummary(selected) }
+        }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            SummaryUiState()
+        )
 
-    private fun List<SaleWithItems>.toSummary(): MonthlySummaryUiState {
-        val received = filter { it.sale.status == PaymentStatus.PAID }.sumOf { it.totalCents }
-        val pending = filter { it.sale.status == PaymentStatus.PENDING }.sumOf { it.totalCents }
-        val byMethod = filter { it.sale.status == PaymentStatus.PAID }
-            .groupBy { it.sale.paymentMethod }
-            .mapValues { (_, sales) -> sales.sumOf { it.totalCents } / 100.0 }
-        return MonthlySummaryUiState(
-            totalReceived = received / 100.0,
-            totalPending = pending / 100.0,
+    fun selectPeriod(period: SummaryPeriod) {
+        selection.value = selection.value.copy(period = period)
+    }
+
+    fun previousPeriod() {
+        selection.value = selection.value.moveBy(-1)
+    }
+
+    fun nextPeriod() {
+        selection.value = selection.value.moveBy(1)
+    }
+
+    fun returnToToday() {
+        selection.value = selection.value.copy(date = LocalDate.now())
+    }
+
+    private fun SummarySelection.moveBy(amount: Long): SummarySelection =
+        copy(
+            date = when (period) {
+                SummaryPeriod.DAY -> date.plusDays(amount)
+                SummaryPeriod.MONTH -> date.plusMonths(amount)
+            }
+        )
+
+    private fun SummarySelection.toRange(zone: ZoneId): PeriodRange {
+        val startDate = when (period) {
+            SummaryPeriod.DAY -> date
+            SummaryPeriod.MONTH -> YearMonth.from(date).atDay(1)
+        }
+        val endDate = when (period) {
+            SummaryPeriod.DAY -> startDate.plusDays(1)
+            SummaryPeriod.MONTH -> startDate.plusMonths(1)
+        }
+        return PeriodRange(
+            start = startDate.atStartOfDay(zone).toInstant().toEpochMilli(),
+            endExclusive = endDate.atStartOfDay(zone).toInstant().toEpochMilli()
+        )
+    }
+
+    private fun List<SaleWithItems>.toSummary(
+        selected: SummarySelection
+    ): SummaryUiState {
+        val received = filter { it.sale.status == PaymentStatus.PAID }
+        val pending = filter { it.sale.status == PaymentStatus.PENDING }
+        return SummaryUiState(
+            period = selected.period,
+            selectedDate = selected.date,
+            totalReceivedCents = received.sumOf { it.totalCents },
+            totalPendingCents = pending.sumOf { it.totalCents },
             saleCount = size,
-            byPaymentMethod = byMethod
+            byPaymentMethodCents = received
+                .groupBy { it.sale.paymentMethod }
+                .mapValues { (_, sales) -> sales.sumOf { it.totalCents } }
         )
     }
 }
