@@ -28,8 +28,11 @@ class LedgerRepository @Inject constructor(
     fun observeClientWithSales(clientId: Long): Flow<ClientWithSales?> =
         clientDao.observeClientWithSales(clientId)
 
-    fun observeSalesInPeriod(start: Long, end: Long): Flow<List<SaleWithItems>> =
-        saleDao.observeSalesInPeriod(start, end)
+    fun observeSalesForSummary(
+        start: Long,
+        endExclusive: Long
+    ): Flow<List<SaleWithItems>> =
+        saleDao.observeSalesForSummary(start, endExclusive)
 
     suspend fun saveClient(client: ClientEntity): Long = clientDao.insert(client)
 

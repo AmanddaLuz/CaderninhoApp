@@ -23,11 +23,15 @@ interface SaleDao {
     @Query(
         """
         SELECT * FROM vendas
-        WHERE criadoEm BETWEEN :start AND :end
+        WHERE (status = 'PAGO' AND pagoEm >= :start AND pagoEm < :endExclusive)
+           OR (status = 'PENDENTE' AND criadoEm >= :start AND criadoEm < :endExclusive)
         ORDER BY criadoEm DESC
         """
     )
-    fun observeSalesInPeriod(start: Long, end: Long): Flow<List<SaleWithItems>>
+    fun observeSalesForSummary(
+        start: Long,
+        endExclusive: Long
+    ): Flow<List<SaleWithItems>>
 
     @Transaction
     @Query(

@@ -3,11 +3,11 @@
 ## Navigation
 
 - `LedgerNavHost` hosts a bottom `NavigationBar` with two tabs
-  (`Destino.Clientes`, `Destino.Resumo`) plus a stack-only detail route
-  (`ROTA_DETALHE_CLIENTE`) reached from a client card tap.
+  (`Destination.Clients`, `Destination.Summary`) plus a stack-only detail
+  route reached from a client card tap.
 - The bottom bar is hidden while a non-tab destination (client detail) is on
   top of the back stack.
-- `ClientDetailViewModel` reads `clienteId` from `SavedStateHandle`, backed
+- `ClientDetailViewModel` reads `clientId` from `SavedStateHandle`, backed
   by the `NavType.LongType` argument declared in the nav graph.
 
 ## Composables
@@ -28,6 +28,9 @@
   Brazilian currency input (`R$`, thousands dots and decimal comma).
 - Sale cards show only date, status and total. Tapping a card opens its
   scrollable item breakdown with quantity, unit value and subtotal.
+- Pending sale cards expose "Remarcar data" in the three-dot menu. The date
+  picker accepts only future dates and the previous reminder is reconciled
+  before the new date is scheduled.
 - The sale list is the client's history. Material 3 filter chips switch
   between All, Pending and Paid; empty results explain the active filter
   instead of showing a generic empty screen.
@@ -38,10 +41,12 @@
   expected-payment date; item details remain in the sale-card detail dialog.
 - Reusable, generic components live in `ui/components` and take no
   feature-specific dependency:
-  - `CampoFormularioDialog`/`CampoTexto`: generic labeled-fields dialog used
+  - `FormFieldsDialog`/`TextFieldConfig`: generic labeled-fields dialog used
     by client creation today and reusable for any future simple form.
-  - `SeloStatus`: generic colored status badge used for "em dia"/"fiado" and
+  - `StatusBadge`: generic colored status badge used for "em dia"/"fiado" and
     "Pago"/"Pendente".
+- The summary screen switches between day and month, navigates backward or
+  forward by the active period and can return directly to today.
 
 ## Theming
 

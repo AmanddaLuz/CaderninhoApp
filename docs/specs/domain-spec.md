@@ -31,10 +31,12 @@
 - Client history sorts sales by `createdAt` descending and filters them with
   `ALL`, `PENDING` or `PAID`. Status changes update the active filtered
   list reactively.
-- `SummaryViewModel` computes the current calendar month window
-  (`YearMonth.now()`) once per ViewModel instance and aggregates:
-  - `totalReceived`: sum of `PAID` sales in the window.
-  - `totalPending`: sum of `PENDING` sales in the window.
-  - `byPaymentMethod`: sum of `PAID` sales grouped by `PaymentMethod`.
+- Pending sales can be rescheduled only to a future date. Rescheduling
+  reconciles both the previous and new client/date reminder groups.
+- `SummaryViewModel` supports navigable day and month periods using
+  start-inclusive/end-exclusive boundaries:
+  - `totalReceivedCents`: sum of `PAID` sales whose `paidAt` is in the period.
+  - `totalPendingCents`: sum of `PENDING` sales whose `createdAt` is in the period.
+  - `byPaymentMethodCents`: received cents grouped by `PaymentMethod`.
 
 ## Known follow-ups

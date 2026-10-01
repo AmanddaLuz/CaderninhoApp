@@ -70,7 +70,7 @@ class ClientDetailViewModelTest {
 
         assertFalse(
             context.viewModel.registerSale(
-                itemValido(),
+                validItem(),
                 PaymentMethod.CASH,
                 isPaid = false,
                 dueEpochDay = null
@@ -117,7 +117,7 @@ class ClientDetailViewModelTest {
             awaitItem()
             assertTrue(
                 context.viewModel.registerSale(
-                    itemValido(),
+                    validItem(),
                     PaymentMethod.PIX,
                     isPaid = true,
                     dueEpochDay = null
@@ -139,7 +139,7 @@ class ClientDetailViewModelTest {
         context.viewModel.clientWithSales.test {
             awaitItem()
             context.viewModel.registerSale(
-                itemValido(),
+                validItem(),
                 PaymentMethod.PIX,
                 isPaid = false,
                 dueEpochDay = dueDate
@@ -330,8 +330,8 @@ class ClientDetailViewModelTest {
         )
 
         context.viewModel.clientWithSales.test {
-            val primeiro = awaitItem()
-            val sale = (primeiro ?: awaitItem())!!.sales.single().sale
+            val first = awaitItem()
+            val sale = (first ?: awaitItem())!!.sales.single().sale
             assertFalse(
                 context.viewModel.markAsPending(
                     sale,
@@ -348,7 +348,40 @@ class ClientDetailViewModelTest {
         }
     }
 
-    private fun itemValido() =
+    @Test
+    fun `rescheduling requires pending sale and future date then reconciles reminders`() = runTest {
+        val context = createContext()
+        val today = LocalDate.now().toEpochDay()
+        context.repository.saveTestSale(
+            context.clientId,
+            "Pendente",
+            2_000,
+            PaymentStatus.PENDING,
+            SaleTestData(dueEpochDay = today)
+        )
+
+        context.viewModel.clientWithSales.test {
+            val first = awaitItem()
+            val sale = (first ?: awaitItem())!!.sales.single().sale
+            assertFalse(context.viewModel.rescheduleDueDate(sale, today))
+            assertFalse(
+                context.viewModel.rescheduleDueDate(
+                    sale.copy(status = PaymentStatus.PAID),
+                    today + 1
+                )
+            )
+
+            val newDueDate = today + 3
+            assertTrue(context.viewModel.rescheduleDueDate(sale, newDueDate))
+
+            val updated = awaitItem()!!.sales.single().sale
+            assertEquals(newDueDate, updated.dueEpochDay)
+            assertEquals(listOf(context.clientId to today), context.scheduler.cancelled)
+            assertEquals(listOf(context.clientId to newDueDate), context.scheduler.scheduled)
+        }
+    }
+
+    private fun validItem() =
         listOf(SaleItemForm("Corte", "1", "40,00"))
 
     private data class TestContext(

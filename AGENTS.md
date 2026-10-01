@@ -15,7 +15,7 @@
 - Room is the local source of truth; a future Firebase sync adapter must
   satisfy the existing `LedgerRepository` contract (see ADR 0002).
 - Reusable, generic Composable components (`ui/components`) before
-  feature-specific duplication — mirror `CampoFormularioDialog`/`SeloStatus`.
+  feature-specific duplication — mirror `FormFieldsDialog`/`StatusBadge`.
 - Never log or persist WhatsApp message content beyond what is needed to send
   it (see ADR 0003).
 - Keep `minSdk 24`; enable core library desugaring for `java.time` usage.

@@ -3,9 +3,9 @@ package com.caderninho.app.util
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import androidx.core.net.toUri
 import java.net.URLEncoder
 
 /**
@@ -19,7 +19,7 @@ object WhatsAppLauncher {
     fun sendCharge(context: Context, phone: String, message: String) {
         val number = normalizePhone(phone)
         val text = URLEncoder.encode(message, "UTF-8")
-        val uri = Uri.parse("https://wa.me/$number?text=$text")
+        val uri = "https://wa.me/$number?text=$text".toUri()
         val intent = Intent(Intent.ACTION_VIEW, uri)
         try {
             context.startActivity(intent)
