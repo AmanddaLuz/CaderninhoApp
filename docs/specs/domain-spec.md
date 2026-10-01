@@ -29,6 +29,9 @@
 - Starting a charge preselects overdue pending sales and those due today.
   Selection can be changed or expanded to every pending sale, and
   only selected sales compose the WhatsApp total.
+- Client history sorts sales by `criadoEm` descending and filters them with
+  `TODOS`, `PENDENTES` or `PAGOS`. Status changes update the active filtered
+  list reactively.
 - `ResumoViewModel` computes the current calendar month window
   (`YearMonth.now()`) once per ViewModel instance and aggregates:
   - `totalRecebido`: sum of `PAGO` sales in the window.
@@ -36,6 +39,3 @@
   - `porFormaPagamento`: sum of `PAGO` sales grouped by `FormaPagamento`.
 
 ## Known follow-ups
-
-- Client history with chronological filters for all, pending and paid sales
-  is planned as a separate vertical feature.

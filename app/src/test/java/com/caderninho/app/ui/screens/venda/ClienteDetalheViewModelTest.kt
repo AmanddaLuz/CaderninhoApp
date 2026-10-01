@@ -275,6 +275,50 @@ class ClienteDetalheViewModelTest {
     }
 
     @Test
+    fun `history sorts newest first and filters reactively by status`() = runTest {
+        val contexto = criarContexto()
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Pendente antiga",
+            1_000,
+            StatusPagamento.PENDENTE,
+            VendaTeste(criadoEm = 1_000)
+        )
+        contexto.repository.salvarVendaTeste(
+            contexto.clienteId,
+            "Paga recente",
+            2_000,
+            StatusPagamento.PAGO,
+            VendaTeste(criadoEm = 2_000, pagoEm = 3_000)
+        )
+
+        contexto.viewModel.historico.test {
+            var todos = awaitItem()
+            while (todos.vendas.size < 2) todos = awaitItem()
+            assertEquals(
+                listOf("Paga recente", "Pendente antiga"),
+                todos.vendas.map { it.itens.single().descricao }
+            )
+
+            contexto.viewModel.selecionarFiltroHistorico(FiltroHistorico.PENDENTES)
+            val pendentes = awaitItem()
+            assertEquals(
+                listOf("Pendente antiga"),
+                pendentes.vendas.map { it.itens.single().descricao }
+            )
+
+            contexto.viewModel.marcarComoPago(pendentes.vendas.single().venda)
+            val vazio = awaitItem()
+            assertTrue(vazio.vendas.isEmpty())
+
+            contexto.viewModel.selecionarFiltroHistorico(FiltroHistorico.PAGOS)
+            val pagos = awaitItem()
+            assertEquals(2, pagos.vendas.size)
+            assertTrue(pagos.vendas.all { it.venda.status == StatusPagamento.PAGO })
+        }
+    }
+
+    @Test
     fun `marking sale pending requires a non past date and clears pagoEm`() = runTest {
         val contexto = criarContexto()
         contexto.repository.salvarVendaTeste(

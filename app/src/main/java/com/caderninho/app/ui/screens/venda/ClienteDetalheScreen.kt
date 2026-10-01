@@ -25,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -59,7 +60,8 @@ private data class ClienteDetalheAcoes(
     val cobrar: () -> Unit,
     val marcarPago: (VendaEntity) -> Unit,
     val marcarPendente: (VendaEntity) -> Unit,
-    val remover: (VendaEntity) -> Unit
+    val remover: (VendaEntity) -> Unit,
+    val filtrarHistorico: (FiltroHistorico) -> Unit
 )
 
 @Composable
@@ -68,6 +70,7 @@ fun ClienteDetalheScreen(
 ) {
     val dados by viewModel.clienteComVendas.collectAsState()
     val cobranca by viewModel.cobranca.collectAsState()
+    val historico by viewModel.historico.collectAsState()
     val erroFormulario by viewModel.erroFormulario.collectAsState()
     val context = LocalContext.current
     var mostrarFormulario by remember { mutableStateOf(false) }
@@ -90,11 +93,13 @@ fun ClienteDetalheScreen(
     ) { padding ->
         ClienteDetalheConteudo(
             dados = dados,
+            historico = historico,
             acoes = ClienteDetalheAcoes(
                 cobrar = viewModel::iniciarCobranca,
                 marcarPago = viewModel::marcarComoPago,
                 marcarPendente = { vendaParaPendente = it },
-                remover = viewModel::removerVenda
+                remover = viewModel::removerVenda,
+                filtrarHistorico = viewModel.selecionarFiltroHistorico
             ),
             modifier = Modifier.padding(padding)
         )
@@ -152,6 +157,7 @@ private fun ClienteDetalheEfeitos(viewModel: ClienteDetalheViewModel, context: C
 @Composable
 private fun ClienteDetalheConteudo(
     dados: ClienteComVendas?,
+    historico: HistoricoUiState,
     acoes: ClienteDetalheAcoes,
     modifier: Modifier = Modifier
 ) {
@@ -171,11 +177,14 @@ private fun ClienteDetalheConteudo(
             saldoPendenteCentavos = saldoPendente,
             onCobrar = acoes.cobrar
         )
+        HistoricoFiltros(
+            filtro = historico.filtro,
+            onFiltroSelecionado = acoes.filtrarHistorico
+        )
         ListaVendas(
-            vendas = dados.vendas,
-            onMarcarPago = acoes.marcarPago,
-            onMarcarPendente = acoes.marcarPendente,
-            onRemover = acoes.remover,
+            vendas = historico.vendas,
+            filtro = historico.filtro,
+            acoes = acoes,
             modifier = Modifier.weight(1f)
         )
     }
@@ -184,15 +193,21 @@ private fun ClienteDetalheConteudo(
 @Composable
 private fun ListaVendas(
     vendas: List<VendaComItens>,
-    onMarcarPago: (VendaEntity) -> Unit,
-    onMarcarPendente: (VendaEntity) -> Unit,
-    onRemover: (VendaEntity) -> Unit,
+    filtro: FiltroHistorico,
+    acoes: ClienteDetalheAcoes,
     modifier: Modifier = Modifier
 ) {
     if (vendas.isEmpty()) {
         Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Text("Nenhuma venda registrada ainda.")
+            Text(
+                when (filtro) {
+                    FiltroHistorico.TODOS -> "Nenhuma venda registrada ainda."
+                    FiltroHistorico.PENDENTES -> "Nenhuma venda pendente."
+                    FiltroHistorico.PAGOS -> "Nenhuma venda paga."
+                }
+            )
         }
+
     } else {
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
@@ -202,9 +217,31 @@ private fun ListaVendas(
             items(vendas, key = { it.venda.id }) { venda ->
                 VendaCard(
                     venda = venda,
-                    onMarcarPago = { onMarcarPago(venda.venda) },
-                    onMarcarPendente = { onMarcarPendente(venda.venda) },
-                    onRemover = { onRemover(venda.venda) }
+                    onMarcarPago = { acoes.marcarPago(venda.venda) },
+                    onMarcarPendente = { acoes.marcarPendente(venda.venda) },
+                    onRemover = { acoes.remover(venda.venda) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoricoFiltros(
+    filtro: FiltroHistorico,
+    onFiltroSelecionado: (FiltroHistorico) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Text("Histórico", style = MaterialTheme.typography.titleMedium)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            FiltroHistorico.entries.forEach { opcao ->
+                FilterChip(
+                    selected = filtro == opcao,
+                    onClick = { onFiltroSelecionado(opcao) },
+                    label = { Text(opcao.rotulo()) }
                 )
             }
         }
@@ -311,4 +348,10 @@ private fun solicitarPermissaoNotificacao(
             Manifest.permission.POST_NOTIFICATIONS
         ) != PackageManager.PERMISSION_GRANTED
     if (precisaPermissao) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+}
+
+private fun FiltroHistorico.rotulo(): String = when (this) {
+    FiltroHistorico.TODOS -> "Todos"
+    FiltroHistorico.PENDENTES -> "Pendentes"
+    FiltroHistorico.PAGOS -> "Pagos"
 }
