@@ -11,22 +11,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColors = lightColorScheme(
-    primary = VerdeCaderninho,
+    primary = LedgerGreen,
     secondary = VerdeClaro,
-    tertiary = Ambar,
-    error = Vermelho,
+    tertiary = Amber,
+    error = Red,
     background = FundoClaro
 )
 
 private val DarkColors = darkColorScheme(
     primary = VerdeClaro,
-    secondary = VerdeCaderninho,
-    tertiary = Ambar,
-    error = Vermelho
+    secondary = LedgerGreen,
+    tertiary = Amber,
+    error = Red
 )
 
 @Composable
-fun CaderninhoTheme(
+fun LedgerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit

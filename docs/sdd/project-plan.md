@@ -15,12 +15,14 @@
 | 2. Vendas e fiado | Completed: sale/service registration, payment status, paid/pending toggle |
 | 3. Cobrança WhatsApp | Completed: `wa.me` deep link charge with pending balance message |
 | 4. Resumo mensal | Completed: monthly received/pending totals by payment method |
-| 5. Busca e CPF | In progress: client search by name/phone and optional validated CPF |
-| 6. Itens, vencimento e lembrete | In progress: itemized sales, expected payment date, grouped local notification and selective user-confirmed WhatsApp hand-off |
+| 5. Busca e CPF | Completed: client search by name/phone and optional validated CPF |
+| 6. Itens, vencimento e lembrete | Completed: itemized sales, expected payment date, grouped local notification and selective user-confirmed WhatsApp hand-off |
 | 7. Histórico do cliente | Completed: chronological sales with All, Pending and Paid filters |
-| 8. Sincronização Firebase | Planned: optional cloud backup/sync on top of the local Room source of truth |
-| 9. Recibo e exportação | Planned: shareable receipt per sale/cliente |
-| 10. Hardening | Planned: requirement audit, final validation and documentation |
+| 8. English code naming | Completed: English identifiers, files and packages with Portuguese UI copy and backward-compatible Room storage |
+| 9. Resumo diário e mensal | Planned: navigable daily/monthly periods, received totals by payment date and pending totals by creation date |
+| 10. Sincronização Firebase | Planned: optional cloud backup/sync on top of the local Room source of truth |
+| 11. Recibo e exportação | Planned: shareable receipt per sale/client |
+| 12. Hardening | Planned: requirement audit, final validation and documentation |
 
 <!-- markdownlint-enable MD013 -->
 

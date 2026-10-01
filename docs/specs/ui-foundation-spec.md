@@ -2,17 +2,17 @@
 
 ## Navigation
 
-- `CaderninhoNavHost` hosts a bottom `NavigationBar` with two tabs
+- `LedgerNavHost` hosts a bottom `NavigationBar` with two tabs
   (`Destino.Clientes`, `Destino.Resumo`) plus a stack-only detail route
   (`ROTA_DETALHE_CLIENTE`) reached from a client card tap.
 - The bottom bar is hidden while a non-tab destination (client detail) is on
   top of the back stack.
-- `ClienteDetalheViewModel` reads `clienteId` from `SavedStateHandle`, backed
+- `ClientDetailViewModel` reads `clienteId` from `SavedStateHandle`, backed
   by the `NavType.LongType` argument declared in the nav graph.
 
 ## Composables
 
-- Screens (`ClientesScreen`, `ClienteDetalheScreen`, `ResumoScreen`) own a
+- Screens (`ClientesScreen`, `ClientDetailScreen`, `SummaryScreen`) own a
   `hiltViewModel()` default and collect `StateFlow` as `State` with
   `collectAsState()`.
 - Screens are passive: they render `StateFlow` values and forward user
@@ -45,5 +45,5 @@
 
 ## Theming
 
-- `CaderninhoTheme` wraps Material 3, preferring dynamic color on API 31+ and
+- `LedgerTheme` wraps Material 3, preferring dynamic color on API 31+ and
   falling back to the fixed `LightColors`/`DarkColors` schemes otherwise.

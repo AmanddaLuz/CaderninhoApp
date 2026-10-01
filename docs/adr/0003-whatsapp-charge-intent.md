@@ -17,7 +17,7 @@ send inside WhatsApp.
 
 ## Consequences
 
-- `WhatsAppUtil.enviarCobranca` builds the link from digits-only phone number
+- `WhatsAppLauncher.sendCharge` builds the link from digits-only phone number
   normalized to `55<ddd><numero>` and a URL-encoded message; it never stores
   or logs the message content.
 - If WhatsApp is not installed, the intent launch fails silently into a

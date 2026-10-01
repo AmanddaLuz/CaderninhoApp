@@ -13,7 +13,7 @@
 - Jetpack Compose with Material 3 as the only presentation stack.
 - MVVM: stateless Composables, immutable UI state, Hilt-injected ViewModels.
 - Room is the local source of truth; a future Firebase sync adapter must
-  satisfy the existing `CaderninhoRepository` contract (see ADR 0002).
+  satisfy the existing `LedgerRepository` contract (see ADR 0002).
 - Reusable, generic Composable components (`ui/components`) before
   feature-specific duplication — mirror `CampoFormularioDialog`/`SeloStatus`.
 - Never log or persist WhatsApp message content beyond what is needed to send
