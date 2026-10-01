@@ -46,7 +46,8 @@ advisories for SDKs, plugins and dependencies remain informational and are
 excluded from the Lint gate. Kover requires at least 80% eligible line
 coverage; `ui/theme`, `ui/navigation`, `di`, Room DAOs, the
 `LedgerDatabase` class, generated `*ScreenKt` Composable wrappers,
-feature dialog Composables, `LedgerApplication`, `MainActivity` and Android-only
+feature dialog and sale-card Composables, `LedgerApplication`, `MainActivity`
+and Android-only
 notification adapters (`Worker`, `NotificationManager`, WorkManager
 scheduler) are excluded, since they hold Android wiring or declarative UI
 without business rules. Reminder coordination, sale rules, ViewModels and
