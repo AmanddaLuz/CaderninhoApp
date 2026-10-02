@@ -23,7 +23,10 @@ Spec-Driven Development (SDD).
 - registro de venda/serviço com valor e forma de pagamento;
 - marcação de pagamento como pago ou pendente (fiado);
 - cobrança de saldo pendente via WhatsApp (`wa.me`, sem API paga);
-- resumo mensal: recebido, pendente e totais por forma de pagamento.
+- resumo diário e mensal navegável: recebido pela data do pagamento, pendente
+  pela data da venda e totais por forma de pagamento;
+- remarcação da data prevista para vendas pendentes, com reagendamento do
+  lembrete local.
 
 ## Documentação
 

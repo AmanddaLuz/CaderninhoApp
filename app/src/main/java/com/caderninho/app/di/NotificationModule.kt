@@ -2,17 +2,17 @@ package com.caderninho.app.di
 
 import com.caderninho.app.notification.ChargeReminderScheduler
 import com.caderninho.app.notification.WorkManagerChargeReminderScheduler
-import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class NotificationModule {
+object NotificationModule {
 
-    @Binds
-    abstract fun bindChargeReminderScheduler(
+    @Provides
+    fun provideChargeReminderScheduler(
         implementation: WorkManagerChargeReminderScheduler
-    ): ChargeReminderScheduler
+    ): ChargeReminderScheduler = implementation
 }

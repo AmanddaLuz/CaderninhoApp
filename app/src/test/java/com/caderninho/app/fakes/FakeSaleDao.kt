@@ -22,9 +22,19 @@ class FakeSaleDao : SaleDao {
     override fun observeAllSales(): Flow<List<SaleWithItems>> =
         sales.map { list -> list.sortedByDescending { it.sale.createdAt } }
 
-    override fun observeSalesInPeriod(start: Long, end: Long): Flow<List<SaleWithItems>> =
+    override fun observeSalesForSummary(
+        start: Long,
+        endExclusive: Long
+    ): Flow<List<SaleWithItems>> =
         sales.map { list ->
-            list.filter { it.sale.createdAt in start..end }
+            list.filter {
+                when (it.sale.status) {
+                    PaymentStatus.PAID ->
+                        it.sale.paidAt != null && it.sale.paidAt in start until endExclusive
+                    PaymentStatus.PENDING ->
+                        it.sale.createdAt in start until endExclusive
+                }
+            }
                 .sortedByDescending { it.sale.createdAt }
         }
 
@@ -59,12 +69,12 @@ class FakeSaleDao : SaleDao {
         items: List<SaleItemEntity>
     ): Long {
         val withId = if (sale.id == 0L) sale.copy(id = nextId++) else sale
-        val itensComId = items.map { item ->
+        val itemsWithIds = items.map { item ->
             val withItemId = if (item.id == 0L) item.copy(id = nextItemId++) else item
             withItemId.copy(saleId = withId.id)
         }
         sales.value = sales.value.filterNot { it.sale.id == withId.id } +
-            SaleWithItems(withId, itensComId)
+            SaleWithItems(withId, itemsWithIds)
         return withId.id
     }
 

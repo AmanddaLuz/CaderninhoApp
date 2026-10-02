@@ -45,6 +45,15 @@ android {
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }
+    lint {
+        warningsAsErrors = true
+        disable += setOf(
+            "AndroidGradlePluginVersion",
+            "GradleDependency",
+            "NewerVersionAvailable",
+            "OldTargetApi"
+        )
+    }
 }
 
 dependencies {
@@ -117,6 +126,9 @@ kover {
                     "*.*ScreenKt$*",
                     "*.*DialogKt",
                     "*.*DialogKt$*",
+                    "*.ui.screens.sale.SaleCardKt",
+                    "*.ui.screens.sale.SaleCardKt$*",
+                    "*.ui.screens.sale.SaleMenuActions",
                     "*.LedgerApplication",
                     "*.MainActivity",
                     "*.MainActivity$*",

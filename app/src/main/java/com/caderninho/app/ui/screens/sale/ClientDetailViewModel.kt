@@ -180,6 +180,25 @@ class ClientDetailViewModel @Inject constructor(
         return true
     }
 
+    fun rescheduleDueDate(sale: SaleEntity, dueEpochDay: Long): Boolean {
+        if (sale.status != PaymentStatus.PENDING ||
+            dueEpochDay <= LocalDate.now().toEpochDay()
+        ) {
+            return false
+        }
+        viewModelScope.launch {
+            repository.updateStatus(
+                saleId = sale.id,
+                status = PaymentStatus.PENDING,
+                paidAt = null,
+                dueEpochDay = dueEpochDay
+            )
+            reminderCoordinator.reconcile(clientId, sale.dueEpochDay)
+            reminderCoordinator.reconcile(clientId, dueEpochDay)
+        }
+        return true
+    }
+
     fun deleteSale(sale: SaleEntity) {
         viewModelScope.launch {
             repository.deleteSale(sale)
@@ -235,10 +254,9 @@ class ClientDetailViewModel @Inject constructor(
         }
     }
 
-    fun clearFormError() {
+    val clearFormError: () -> Unit = {
         _formError.value = null
     }
-
 }
 
 private fun validateSaleDueDate(isPaid: Boolean, dueEpochDay: Long?): String? = when {
