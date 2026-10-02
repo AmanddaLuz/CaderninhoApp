@@ -14,7 +14,7 @@ to `main` or `develop`.
 
 ## Releases
 
-1. Atualize `VERSION` em uma branch `release/*`.
+1. Atualize `VERSION` e incremente `VERSION_CODE` em uma branch `release/*`.
 2. Abra PR para `develop`.
 3. Depois do merge, abra PR de `develop` para `main`.
 4. O merge em `main` cria automaticamente a tag `v<versão>`.
