@@ -39,6 +39,8 @@ Spec-Driven Development (SDD).
 - Decisões de arquitetura (ADR): `docs/adr/`
 - Visão geral de arquitetura: `docs/architecture/overview.md`
 - Estratégia de testes: `docs/testing/strategy.md`
+- Checklist da Play Store: `docs/release/play-store-checklist.md`
+- Política de privacidade: `docs/legal/privacy-policy.md`
 - Guia para agentes de IA: `AGENTS.md`
 
 ## Como rodar

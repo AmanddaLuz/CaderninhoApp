@@ -22,7 +22,7 @@
 | 9. Resumo diário e mensal | Completed: navigable daily/monthly periods, received totals by payment date, pending totals by creation date and pending-sale due-date rescheduling |
 | 10. Home privada e identidade visual | Completed: privacy-first start destination, hidden financial totals, notebook visual language and explicit selected states |
 | 11. Configurações e privacidade | Planned: optional biometric/device-credential lock, privacy controls and secure notification deep links |
-| 12. Preparação Play Store | Planned: API-level update, signed AAB, store listing, privacy policy, Data Safety, testing tracks and staged rollout |
+| 12. Preparação Play Store | In progress: API 36, signed AAB, store listing, privacy policy, Data Safety, closed testing and staged rollout |
 | 13. Sincronização Firebase | Planned: optional account-based cloud backup/sync on top of the local Room source of truth |
 | 14. Recibo e exportação | Planned: shareable receipt per sale/client |
 | 15. Hardening | Planned: requirement audit, final validation and documentation |

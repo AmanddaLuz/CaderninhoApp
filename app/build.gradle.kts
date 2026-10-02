@@ -8,23 +8,63 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+val appVersionName = rootProject.file("VERSION").readText().trim()
+val appVersionCode = rootProject.file("VERSION_CODE").readText().trim().toInt()
+val uploadStoreFile = providers.gradleProperty("CADERNINHO_UPLOAD_STORE_FILE")
+    .orElse(providers.environmentVariable("CADERNINHO_UPLOAD_STORE_FILE"))
+val uploadStorePassword = providers.gradleProperty("CADERNINHO_UPLOAD_STORE_PASSWORD")
+    .orElse(providers.environmentVariable("CADERNINHO_UPLOAD_STORE_PASSWORD"))
+val uploadKeyAlias = providers.gradleProperty("CADERNINHO_UPLOAD_KEY_ALIAS")
+    .orElse(providers.environmentVariable("CADERNINHO_UPLOAD_KEY_ALIAS"))
+val uploadKeyPassword = providers.gradleProperty("CADERNINHO_UPLOAD_KEY_PASSWORD")
+    .orElse(providers.environmentVariable("CADERNINHO_UPLOAD_KEY_PASSWORD"))
+val releaseSigningValues = listOf(
+    uploadStoreFile,
+    uploadStorePassword,
+    uploadKeyAlias,
+    uploadKeyPassword
+)
+val hasReleaseSigning = releaseSigningValues.all { it.isPresent }
+val signedReleaseTasks = setOf("bundleRelease", "assembleRelease")
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.substringAfterLast(':') in signedReleaseTasks
+}
+
+check(!releaseBuildRequested || hasReleaseSigning) {
+    "Release signing is required. Configure the CADERNINHO_UPLOAD_* Gradle properties " +
+        "or environment variables documented in docs/release/play-store-checklist.md."
+}
+
 android {
     namespace = "com.caderninho.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.caderninho.app"
         minSdk = 24
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 36
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(uploadStoreFile.get())
+                storePassword = uploadStorePassword.get()
+                keyAlias = uploadKeyAlias.get()
+                keyPassword = uploadKeyPassword.get()
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -77,7 +117,6 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)

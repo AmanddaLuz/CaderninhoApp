@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import com.caderninho.app.util.Formatters
 fun HomeScreen(
     onOpenClients: () -> Unit,
     onOpenSummary: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -71,6 +73,12 @@ fun HomeScreen(
                 icon = Icons.Filled.Assessment,
                 onClick = onOpenSummary
             )
+            TextButton(
+                onClick = onOpenPrivacyPolicy,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text("Política de privacidade")
+            }
         }
     }
 }

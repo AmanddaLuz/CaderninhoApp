@@ -15,10 +15,10 @@
 Client/sale data (names, phone numbers, amounts owed) is personal and
 financial. Relying on the platform's implicit backup/cleartext defaults
 (flagged by SonarCloud/Android Lint) leaves those decisions undocumented and
-broader than necessary. The app never performs raw HTTP calls today (WhatsApp
-charging uses an `Intent` deep link per ADR 0003, and the `INTERNET`
-permission exists only for a future Firebase sync per ADR 0002), so
-cleartext traffic can be disabled without breaking any feature.
+broader than necessary. The app never performs raw HTTP calls today. WhatsApp charging uses an
+external `Intent` deep link per ADR 0003, so neither the `INTERNET` permission
+nor cleartext traffic is needed. A future Firebase phase must add network
+permission and revisit the privacy disclosures alongside ADR 0002.
 
 ## Consequences
 
