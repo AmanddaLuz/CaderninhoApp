@@ -56,6 +56,7 @@ class ClientsViewModelTest {
         advanceUntilIdle()
         val item = viewModel.uiState.value.clients.single()
         assertEquals("Maria", item.client.name)
+        assertEquals("11999999999", item.client.phone)
         assertEquals("52998224725", item.client.cpf)
         assertEquals(0L, item.pendingBalanceCents)
     }

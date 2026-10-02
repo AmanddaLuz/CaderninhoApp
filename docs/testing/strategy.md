@@ -13,6 +13,8 @@
 - CPF accepts empty input, validates Brazilian check digits, is normalized to
   digits and rejects duplicates.
 - Client search ignores name case/accents and phone punctuation.
+- Client phone input accepts at most 11 digits, displays the Brazilian mobile
+  mask progressively and persists digits only.
 - Blank description or non-positive value is rejected by
   `ClientDetailViewModel.registerSale`.
 - Itemized sales reject blank descriptions and non-positive quantities/unit
@@ -38,6 +40,9 @@
   reactively when a sale changes status.
 - Rescheduling rejects paid sales and dates that are not in the future,
   cancels the previous reminder group and schedules the new one.
+- Home state contains aggregate data only, starts financial values hidden and
+  correctly counts pending, overdue and today-due sales.
+- Home value visibility toggles in memory and is not persisted.
 
 ## Gates
 

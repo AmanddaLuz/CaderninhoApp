@@ -18,16 +18,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,6 +49,7 @@ import com.caderninho.app.data.local.ClientWithSales
 import com.caderninho.app.data.local.SaleWithItems
 import com.caderninho.app.data.local.SaleEntity
 import com.caderninho.app.domain.model.PaymentStatus
+import com.caderninho.app.ui.components.NotebookFilterChip
 import com.caderninho.app.util.Formatters
 import com.caderninho.app.util.WhatsAppLauncher
 import java.time.LocalDate
@@ -59,9 +64,7 @@ private data class ClientDetailActions(
 )
 
 @Composable
-fun ClientDetailScreen(
-    viewModel: ClientDetailViewModel = hiltViewModel()
-) {
+fun ClientDetailScreen(onBack: () -> Unit, viewModel: ClientDetailViewModel = hiltViewModel()) {
     val data by viewModel.clientWithSales.collectAsState()
     val charge by viewModel.charge.collectAsState()
     val history by viewModel.history.collectAsState()
@@ -76,30 +79,23 @@ fun ClientDetailScreen(
 
     ClientDetailEffects(viewModel, context)
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                viewModel.clearFormError()
-                showForm = true
-            }) {
-                Icon(Icons.Filled.Add, contentDescription = "Nova venda")
-            }
+    ClientDetailScaffold(
+        data = data,
+        history = history,
+        actions = ClientDetailActions(
+            charge = viewModel::startCharge,
+            markPaid = viewModel::markAsPaid,
+            markPending = { saleToMarkPending = it },
+            reschedule = { saleToReschedule = it },
+            delete = viewModel::deleteSale,
+            filterHistory = viewModel.selectHistoryFilter
+        ),
+        onBack = onBack,
+        onAddSale = {
+            viewModel.clearFormError()
+            showForm = true
         }
-    ) { padding ->
-        ClientDetailContent(
-            data = data,
-            history = history,
-            actions = ClientDetailActions(
-                charge = viewModel::startCharge,
-                markPaid = viewModel::markAsPaid,
-                markPending = { saleToMarkPending = it },
-                reschedule = { saleToReschedule = it },
-                delete = viewModel::deleteSale,
-                filterHistory = viewModel.selectHistoryFilter
-            ),
-            modifier = Modifier.padding(padding)
-        )
-    }
+    )
 
     if (showForm) {
         SaleFormDialog(
@@ -141,6 +137,51 @@ fun ClientDetailScreen(
             saleToReschedule = null
         }
     }
+}
+
+@Composable
+private fun ClientDetailScaffold(
+    data: ClientWithSales?,
+    history: HistoryUiState,
+    actions: ClientDetailActions,
+    onBack: () -> Unit,
+    onAddSale: () -> Unit
+) {
+    Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        topBar = { ClientDetailTopBar(onBack) },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddSale) {
+                Icon(Icons.Filled.Add, contentDescription = "Nova venda")
+            }
+        }
+    ) { padding ->
+        ClientDetailContent(
+            data = data,
+            history = history,
+            actions = actions,
+            modifier = Modifier.padding(padding)
+        )
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ClientDetailTopBar(onBack: () -> Unit) {
+    TopAppBar(
+        title = { Text("Detalhes do cliente") },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Voltar"
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = TOP_BAR_ALPHA)
+        )
+    )
 }
 
 @Composable
@@ -240,10 +281,10 @@ private fun HistoryFilters(
             modifier = Modifier.padding(top = 8.dp)
         ) {
             HistoryFilter.entries.forEach { option ->
-                FilterChip(
+                NotebookFilterChip(
                     selected = filter == option,
                     onClick = { onFilterSelected(option) },
-                    label = { Text(option.label()) }
+                    label = option.label()
                 )
             }
         }
@@ -260,7 +301,7 @@ private fun ClientHeaderCard(
     Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(name, style = MaterialTheme.typography.titleLarge)
-            Text(phone, style = MaterialTheme.typography.bodyMedium)
+            Text(Formatters.phone(phone), style = MaterialTheme.typography.bodyMedium)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -297,3 +338,5 @@ private fun HistoryFilter.label(): String = when (this) {
     HistoryFilter.PENDING -> "Pendentes"
     HistoryFilter.PAID -> "Pagos"
 }
+
+private const val TOP_BAR_ALPHA = 0.96f

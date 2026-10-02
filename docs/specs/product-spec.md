@@ -8,29 +8,36 @@ payment reminders through WhatsApp.
 
 ## Functional scope
 
-1. Cliente registration with name, phone (WhatsApp), optional validated CPF
+1. Open on a privacy-first home that exposes no client identity. It shows
+   aggregate counts and keeps financial totals hidden until explicitly
+   revealed for the current session.
+2. Cliente registration with name, phone (WhatsApp), optional validated CPF
    and optional note.
-2. Client list showing an "em dia" or pending-balance badge, with search by
+3. Client list showing an "em dia" or pending-balance badge, with search by
    name or phone.
-3. Register a sale/service with one or more item lines. Each line has a
+4. Register a sale/service with one or more item lines. Each line has a
    description, quantity and unit value; the sale total is calculated from
    those lines.
-4. A pending sale records an expected payment date.
-5. Mark a sale as paid or pending (fiado) at any time.
-6. Schedule one local reminder per client and expected-payment date. The shopkeeper
+5. A pending sale records an expected payment date.
+6. Mark a sale as paid or pending (fiado) at any time.
+7. Schedule one local reminder per client and expected-payment date. The shopkeeper
    taps the notification to open a pre-filled WhatsApp charge and manually
    confirms sending it.
-7. Select which pending sales to charge. Overdue sales and sales due today
+8. Select which pending sales to charge. Overdue sales and sales due today
    start selected, and the shopkeeper may select, clear or select all pending
    sales.
-8. Monthly summary: total received, total pending and totals by payment
-   method.
-9. Client history in reverse chronological order with All, Pending and Paid
+9. Daily and monthly summaries: total received, total pending and totals by
+   payment method.
+10. Client history in reverse chronological order with All, Pending and Paid
    status filters.
 
 ## Critical rules
 
 - A client requires at least a name to be saved.
+- The app starts on Home; names, phone numbers, CPF and individual sales are
+  never part of its UI state.
+- Financial totals on Home start hidden on every app process and are revealed
+  only by an explicit user action.
 - CPF is optional, but must pass Brazilian check-digit validation and be
   unique when provided.
 - Client search is case- and accent-insensitive for names and ignores phone

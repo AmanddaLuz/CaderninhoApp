@@ -31,10 +31,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.caderninho.app.ui.components.FormFieldsDialog
+import com.caderninho.app.ui.components.PhoneVisualTransformation
 import com.caderninho.app.ui.components.TextFieldConfig
 import com.caderninho.app.ui.components.StatusBadge
-import com.caderninho.app.ui.theme.Red
-import com.caderninho.app.ui.theme.LedgerGreen
+import com.caderninho.app.ui.theme.ErrorRed
+import com.caderninho.app.ui.theme.SuccessGreen
 import com.caderninho.app.util.Formatters
 
 @Composable
@@ -46,6 +47,7 @@ fun ClientsScreen(
     var showDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 viewModel.clearRegistrationError()
@@ -71,7 +73,10 @@ fun ClientsScreen(
                 TextFieldConfig(
                     key = "phone",
                     label = "Telefone (WhatsApp)",
-                    keyboardType = KeyboardType.Phone
+                    keyboardType = KeyboardType.Phone,
+                    digitsOnly = true,
+                    maxLength = 11,
+                    visualTransformation = PhoneVisualTransformation
                 ),
                 TextFieldConfig(
                     key = "cpf",
@@ -156,17 +161,17 @@ private fun ClientCard(
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(name, style = MaterialTheme.typography.titleMedium)
-            Text(phone, style = MaterialTheme.typography.bodyMedium)
+            Text(Formatters.phone(phone), style = MaterialTheme.typography.bodyMedium)
             if (pendingBalanceCents > 0L) {
                 StatusBadge(
                     text = "Fiado: ${Formatters.currencyFromCents(pendingBalanceCents)}",
-                    backgroundColor = Red,
+                    backgroundColor = ErrorRed,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             } else {
                 StatusBadge(
                     text = "Em dia",
-                    backgroundColor = LedgerGreen,
+                    backgroundColor = SuccessGreen,
                     modifier = Modifier.padding(top = 8.dp)
                 )
             }
