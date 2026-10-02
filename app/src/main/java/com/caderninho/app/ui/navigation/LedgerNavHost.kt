@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -33,6 +34,7 @@ fun LedgerNavHost(
     onChargeConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
+    val uriHandler = LocalUriHandler.current
 
     LaunchedEffect(clientToCharge) {
         clientToCharge?.let { clientId ->
@@ -55,7 +57,8 @@ fun LedgerNavHost(
             composable(Destination.Home.route) {
                 HomeScreen(
                     onOpenClients = { navController.openTopLevel(Destination.Clients) },
-                    onOpenSummary = { navController.openTopLevel(Destination.Summary) }
+                    onOpenSummary = { navController.openTopLevel(Destination.Summary) },
+                    onOpenPrivacyPolicy = { uriHandler.openUri(PRIVACY_POLICY_URL) }
                 )
             }
             composable(Destination.Clients.route) {
@@ -120,3 +123,6 @@ private fun NavHostController.openTopLevel(destination: Destination) {
         restoreState = true
     }
 }
+
+private const val PRIVACY_POLICY_URL =
+    "https://github.com/AmanddaLuz/CaderninhoApp/blob/main/docs/legal/privacy-policy.md"

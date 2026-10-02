@@ -59,7 +59,8 @@
   forward by the active period and can return directly to today.
 - Home exposes aggregate counts only. Client identity and individual sales
   never enter `HomeUiState`; financial totals start hidden and visibility is
-  kept only in memory.
+  kept only in memory. A footer opens the public privacy policy required for
+  the store listing.
 - `NotebookPage` supplies the reusable ruled-paper background.
 - `NotebookFilterChip` combines a check icon, border and filled container so
   selected state never depends on color alone.
