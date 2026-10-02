@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.caderninho.app.data.local.SaleWithItems
 import com.caderninho.app.domain.model.PaymentStatus
 import com.caderninho.app.ui.components.StatusBadge
-import com.caderninho.app.ui.theme.Amber
-import com.caderninho.app.ui.theme.LedgerGreen
+import com.caderninho.app.ui.theme.SuccessGreen
+import com.caderninho.app.ui.theme.WarningAmber
 import com.caderninho.app.util.Formatters
 import java.time.LocalDate
 
@@ -129,7 +129,11 @@ private fun SaleCardContent(
         Text(Formatters.currencyFromCents(sale.totalCents))
         StatusBadge(
             text = if (sale.sale.status == PaymentStatus.PAID) "Pago" else "Pendente",
-            backgroundColor = if (sale.sale.status == PaymentStatus.PAID) LedgerGreen else Amber
+            backgroundColor = if (sale.sale.status == PaymentStatus.PAID) {
+                SuccessGreen
+            } else {
+                WarningAmber
+            }
         )
     }
 }

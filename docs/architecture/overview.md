@@ -17,8 +17,8 @@ Composable screen -> ViewModel (Hilt) -> LedgerRepository -> Room DAO
 - `data/local/dao`: `ClientDao`, `SaleDao`.
 - `data/repository`: `LedgerRepository`, the only dependency ViewModels
   are allowed to hold for persistence.
-- `ui/screens/*`: one package per screen area (`clients`, `sale`, `summary`),
-  each with its Hilt `ViewModel` and Composable screen.
+- `ui/screens/*`: one package per screen area (`home`, `clients`, `sale`,
+  `summary`), each with its Hilt `ViewModel` and Composable screen.
 - `ui/components`: generic, reusable Composables with no feature dependency.
 - `ui/navigation`: `Destination` route model and `LedgerNavHost`.
 - `ui/theme`: Material 3 color scheme and typography.
@@ -49,6 +49,8 @@ notification adapters do not build or persist WhatsApp message content.
 - `ClientsViewModel` derives `pendingBalanceCents` per client from pending sales.
 - `ClientDetailViewModel` rejects invalid sale input before persisting.
 - `SummaryViewModel` computes a fixed current-month window once per instance.
+- `HomeViewModel` derives privacy-safe aggregate counts and totals from the
+  Room stream. Value visibility is ephemeral and defaults to hidden.
 
 See `../specs/domain-spec.md`, `../specs/data-spec.md` and
 `../specs/ui-foundation-spec.md` for the canonical behavior.

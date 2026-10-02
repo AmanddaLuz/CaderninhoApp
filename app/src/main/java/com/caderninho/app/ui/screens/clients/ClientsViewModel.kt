@@ -75,7 +75,7 @@ class ClientsViewModel @Inject constructor(
             repository.saveClient(
                 ClientEntity(
                     name = name.trim(),
-                    phone = phone.trim(),
+                    phone = phone.filter(Char::isDigit),
                     cpf = normalizedCpf,
                     notes = notes.trim()
                 )
