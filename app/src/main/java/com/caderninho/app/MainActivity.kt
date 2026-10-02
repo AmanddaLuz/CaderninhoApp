@@ -11,6 +11,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.caderninho.app.notification.ChargeNotification
+import com.caderninho.app.ui.components.NotebookPage
 import com.caderninho.app.ui.navigation.LedgerNavHost
 import com.caderninho.app.ui.theme.LedgerTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -29,13 +30,15 @@ class MainActivity : ComponentActivity() {
             val clientId by clientToCharge.collectAsState()
             LedgerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    LedgerNavHost(
-                        clientToCharge = clientId,
-                        onChargeConsumed = {
-                            clientToCharge.value = null
-                            intent.removeExtra(ChargeNotification.CLIENT_ID_EXTRA)
-                        }
-                    )
+                    NotebookPage {
+                        LedgerNavHost(
+                            clientToCharge = clientId,
+                            onChargeConsumed = {
+                                clientToCharge.value = null
+                                intent.removeExtra(ChargeNotification.CLIENT_ID_EXTRA)
+                            }
+                        )
+                    }
                 }
             }
         }

@@ -18,6 +18,8 @@ Spec-Driven Development (SDD).
 
 ## Funcionalidades
 
+- Home privada sem dados pessoais, com indicadores agregados e valores
+  financeiros ocultos por padrão;
 - cadastro de clientes com nome, telefone e observação;
 - lista de clientes com saldo pendente em destaque;
 - registro de venda/serviço com valor e forma de pagamento;
@@ -26,7 +28,9 @@ Spec-Driven Development (SDD).
 - resumo diário e mensal navegável: recebido pela data do pagamento, pendente
   pela data da venda e totais por forma de pagamento;
 - remarcação da data prevista para vendas pendentes, com reagendamento do
-  lembrete local.
+  lembrete local;
+- identidade visual inspirada em caderno, com tema claro/escuro e estados
+  selecionados acessíveis.
 
 ## Documentação
 

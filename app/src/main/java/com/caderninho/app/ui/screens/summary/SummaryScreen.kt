@@ -13,7 +13,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.caderninho.app.domain.model.PaymentMethod
+import com.caderninho.app.ui.components.NotebookFilterChip
 import com.caderninho.app.util.Formatters
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -39,7 +39,15 @@ fun SummaryScreen(viewModel: SummaryViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Resumo") }) }
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text("Resumo") },
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent
+                )
+            )
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -97,10 +105,10 @@ private fun PeriodSelector(
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         SummaryPeriod.entries.forEach { period ->
-            FilterChip(
+            NotebookFilterChip(
                 selected = selected == period,
                 onClick = { onSelected(period) },
-                label = { Text(if (period == SummaryPeriod.DAY) "Dia" else "Mês") }
+                label = if (period == SummaryPeriod.DAY) "Dia" else "Mês"
             )
         }
     }

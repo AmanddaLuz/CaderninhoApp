@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
 /**
@@ -46,13 +47,13 @@ fun FormFieldsDialog(
                             } else {
                                 newValue
                             }
-                            if (field.maxLength == null || filteredValue.length <= field.maxLength) {
-                                value = filteredValue
-                            }
+                            value = field.maxLength?.let(filteredValue::take)
+                                ?: filteredValue
                         },
                         label = { Text(field.label) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = field.keyboardType),
+                        visualTransformation = field.visualTransformation,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
@@ -84,5 +85,6 @@ data class TextFieldConfig(
     val initialValue: String = "",
     val keyboardType: KeyboardType = KeyboardType.Text,
     val digitsOnly: Boolean = false,
-    val maxLength: Int? = null
+    val maxLength: Int? = null,
+    val visualTransformation: VisualTransformation = VisualTransformation.None
 )

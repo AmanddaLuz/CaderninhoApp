@@ -1,48 +1,49 @@
 package com.caderninho.app.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
 private val LightColors = lightColorScheme(
-    primary = LedgerGreen,
-    secondary = VerdeClaro,
-    tertiary = Amber,
-    error = Red,
-    background = FundoClaro
+    primary = InkBlue,
+    secondary = SuccessGreen,
+    tertiary = WarningAmber,
+    error = ErrorRed,
+    background = PaperLight,
+    surface = CardPaperLight,
+    surfaceVariant = ColorTokens.LightSelection,
+    outline = InkBlue.copy(alpha = 0.55f)
 )
 
 private val DarkColors = darkColorScheme(
-    primary = VerdeClaro,
-    secondary = LedgerGreen,
-    tertiary = Amber,
-    error = Red
+    primary = InkBlueLight,
+    secondary = ColorTokens.DarkSuccess,
+    tertiary = ColorTokens.DarkWarning,
+    error = ColorTokens.DarkError,
+    background = PaperDark,
+    surface = CardPaperDark,
+    surfaceVariant = ColorTokens.DarkSelection,
+    outline = InkBlueLight.copy(alpha = 0.65f)
 )
 
 @Composable
 fun LedgerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColors
-        else -> LightColors
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = CaderninhoTypography,
         content = content
     )
+}
+
+private object ColorTokens {
+    val LightSelection = androidx.compose.ui.graphics.Color(0xFFDCEEF8)
+    val DarkSelection = androidx.compose.ui.graphics.Color(0xFF294253)
+    val DarkSuccess = androidx.compose.ui.graphics.Color(0xFF8CC99A)
+    val DarkWarning = androidx.compose.ui.graphics.Color(0xFFFFB95C)
+    val DarkError = androidx.compose.ui.graphics.Color(0xFFFFB4AB)
 }
