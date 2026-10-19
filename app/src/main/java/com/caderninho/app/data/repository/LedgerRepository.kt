@@ -34,7 +34,14 @@ class LedgerRepository @Inject constructor(
     ): Flow<List<SaleWithItems>> =
         saleDao.observeSalesForSummary(start, endExclusive)
 
-    suspend fun saveClient(client: ClientEntity): Long = clientDao.insert(client)
+    // Upsert: id 0 (padrão de ClientEntity) indica cliente novo -> insert;
+    // caso contrário, atualiza o cliente existente.
+    suspend fun saveClient(client: ClientEntity): Long = if (client.id == 0L) {
+        clientDao.insert(client)
+    } else {
+        clientDao.update(client)
+        client.id
+    }
 
     suspend fun getClient(clientId: Long): ClientEntity? = clientDao.getClient(clientId)
 

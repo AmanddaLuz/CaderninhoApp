@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 /** Destinos de navegação de nível superior (abas do app). */
 sealed class Destination(val route: String, val title: String, val icon: ImageVector) {
     data object Home : Destination("home", "Início", Icons.Filled.Home)
-    data object Clients : Destination("clients", "Clientes", Icons.Filled.People)
+    data object Clients : Destination(CLIENTS_ROUTE, "Clientes", Icons.Filled.People)
     data object Summary : Destination("summary", "Resumo", Icons.Filled.BarChart)
 
     companion object {
@@ -21,3 +21,14 @@ const val CLIENT_DETAIL_ROUTE = "client/{clientId}?charge={charge}"
 
 fun clientDetailRoute(clientId: Long, charge: Boolean = false) =
     "client/$clientId?charge=$charge"
+
+/** Filtro inicial aplicado à tela de Clientes ao ser aberta a partir da Home. */
+enum class ClientsFilter {
+    ALL,
+    PENDING,
+    OVERDUE
+}
+
+const val CLIENTS_ROUTE = "clients?filter={filter}"
+
+fun clientsRoute(filter: ClientsFilter = ClientsFilter.ALL) = "clients?filter=${filter.name}"

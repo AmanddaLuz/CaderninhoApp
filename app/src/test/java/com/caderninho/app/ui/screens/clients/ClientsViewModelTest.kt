@@ -1,5 +1,6 @@
 package com.caderninho.app.ui.screens.clients
 
+import androidx.lifecycle.SavedStateHandle
 import com.caderninho.app.data.local.ClientEntity
 import com.caderninho.app.data.repository.LedgerRepository
 import com.caderninho.app.domain.model.PaymentStatus
@@ -31,7 +32,7 @@ class ClientsViewModelTest {
     @Test
     fun `addClient ignores a blank name`() = runTest {
         val repository = createRepository()
-        val viewModel = ClientsViewModel(repository)
+        val viewModel = ClientsViewModel(repository, SavedStateHandle())
 
         val saved = viewModel.addClient(name = "   ", phone = "11999999999", cpf = "")
         advanceUntilIdle()
@@ -45,7 +46,7 @@ class ClientsViewModelTest {
     @Test
     fun `addClient persists a trimmed client`() = runTest {
         val repository = createRepository()
-        val viewModel = ClientsViewModel(repository)
+        val viewModel = ClientsViewModel(repository, SavedStateHandle())
 
         viewModel.addClient(
             name = " Maria ",
@@ -79,7 +80,7 @@ class ClientsViewModelTest {
             testData = SaleTestData(paidAt = System.currentTimeMillis())
         )
 
-        val viewModel = ClientsViewModel(repository)
+        val viewModel = ClientsViewModel(repository, SavedStateHandle())
         advanceUntilIdle()
 
         val item = viewModel.uiState.value.clients.single()
@@ -90,7 +91,7 @@ class ClientsViewModelTest {
     fun `deleteClient deletes the client`() = runTest {
         val repository = createRepository()
         val clientId = repository.saveClient(ClientEntity(name = "Joao", phone = "11988887777"))
-        val viewModel = ClientsViewModel(repository)
+        val viewModel = ClientsViewModel(repository, SavedStateHandle())
         advanceUntilIdle()
 
         val client = viewModel.uiState.value.clients.single().client
@@ -105,7 +106,7 @@ class ClientsViewModelTest {
         val repository = createRepository()
         repository.saveClient(ClientEntity(name = "José Silva", phone = "(11) 98888-7777"))
         repository.saveClient(ClientEntity(name = "Maria", phone = "(21) 97777-6666"))
-        val viewModel = ClientsViewModel(repository)
+        val viewModel = ClientsViewModel(repository, SavedStateHandle())
         advanceUntilIdle()
 
         viewModel.updateQuery("jose")
@@ -120,7 +121,7 @@ class ClientsViewModelTest {
     @Test
     fun `addClient rejects invalid and duplicate CPF`() = runTest {
         val repository = createRepository()
-        val viewModel = ClientsViewModel(repository)
+        val viewModel = ClientsViewModel(repository, SavedStateHandle())
 
         assertTrue(!viewModel.addClient("Ana", "11999999999", "11111111111"))
         advanceUntilIdle()
