@@ -56,12 +56,21 @@ fun LedgerNavHost(
         ) {
             composable(Destination.Home.route) {
                 HomeScreen(
-                    onOpenClients = { navController.openTopLevel(Destination.Clients) },
-                    onOpenSummary = { navController.openTopLevel(Destination.Summary) },
+                    onOpenClients = { navController.openClients() },
+                    onOpenPendingClients = { navController.openClients(ClientsFilter.PENDING) },
+                    onOpenOverdueClients = { navController.openClients(ClientsFilter.OVERDUE) },
                     onOpenPrivacyPolicy = { uriHandler.openUri(PRIVACY_POLICY_URL) }
                 )
             }
-            composable(Destination.Clients.route) {
+            composable(
+                route = Destination.Clients.route,
+                arguments = listOf(
+                    navArgument("filter") {
+                        type = NavType.StringType
+                        defaultValue = ClientsFilter.ALL.name
+                    }
+                )
+            ) {
                 ClientsScreen(onClientClick = { clientId ->
                     navController.navigate(clientDetailRoute(clientId))
                 })
@@ -101,7 +110,13 @@ private fun LedgerBottomBar(navController: NavHostController) {
             } == true
             NavigationBarItem(
                 selected = selected,
-                onClick = { navController.openTopLevel(destination) },
+                onClick = {
+                    if (destination == Destination.Clients) {
+                        navController.openClients()
+                    } else {
+                        navController.openTopLevel(destination)
+                    }
+                },
                 icon = { Icon(destination.icon, contentDescription = destination.title) },
                 label = { Text(destination.title) },
                 colors = NavigationBarItemDefaults.colors(
@@ -114,15 +129,23 @@ private fun LedgerBottomBar(navController: NavHostController) {
     }
 }
 
+// Nenhuma das abas usa saveState/restoreState: misturar esse mecanismo (usado
+// no padrão clássico de bottom nav) com a rota de Clientes, que tem argumento
+// dinâmico (filtro), deixava o NavController com estado salvo inconsistente e
+// o botão Início parava de voltar para a Home depois de visitar outra aba.
 private fun NavHostController.openTopLevel(destination: Destination) {
     navigate(destination.route) {
-        popUpTo(graph.findStartDestination().id) {
-            saveState = true
-        }
+        popUpTo(graph.findStartDestination().id)
         launchSingleTop = true
-        restoreState = true
+    }
+}
+
+private fun NavHostController.openClients(filter: ClientsFilter = ClientsFilter.ALL) {
+    navigate(clientsRoute(filter)) {
+        popUpTo(graph.findStartDestination().id)
+        launchSingleTop = true
     }
 }
 
 private const val PRIVACY_POLICY_URL =
-    "https://github.com/AmanddaLuz/CaderninhoApp/blob/main/docs/legal/privacy-policy.md"
+    "https://amanddaluz.github.io/caderninho-privacy/"

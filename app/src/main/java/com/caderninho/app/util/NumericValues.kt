@@ -41,5 +41,6 @@ object NumericValues {
         }
     }
 
-    private const val MAX_CURRENCY_DIGITS = 15
+    // Limite de 11 dígitos garante valores até R$ 999.999.999,99 (abaixo de 1 bilhão).
+    private const val MAX_CURRENCY_DIGITS = 11
 }

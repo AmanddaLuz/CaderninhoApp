@@ -1,14 +1,17 @@
 package com.caderninho.app.ui.screens.clients
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.caderninho.app.data.local.ClientWithSales
 import com.caderninho.app.data.local.ClientEntity
 import com.caderninho.app.data.repository.LedgerRepository
 import com.caderninho.app.domain.model.PaymentStatus
+import com.caderninho.app.ui.navigation.ClientsFilter
 import com.caderninho.app.util.CpfValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.text.Normalizer
+import java.time.LocalDate
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,33 +24,49 @@ import javax.inject.Inject
 /** Saldo pendente (fiado) de um cliente, calculado a partir das vendas em aberto. */
 data class ClientUiModel(
     val client: ClientEntity,
-    val pendingBalanceCents: Long
+    val pendingBalanceCents: Long,
+    val hasOverdueSale: Boolean = false
 )
 
 data class ClientsUiState(
     val clients: List<ClientUiModel> = emptyList(),
     val query: String = "",
-    val registrationError: String? = null
+    val registrationError: String? = null,
+    val filter: ClientsFilter = ClientsFilter.ALL
 )
 
 @HiltViewModel
 class ClientsViewModel @Inject constructor(
-    private val repository: LedgerRepository
+    private val repository: LedgerRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val filter = MutableStateFlow(
+        savedStateHandle.get<String>("filter")
+            ?.let { runCatching { ClientsFilter.valueOf(it) }.getOrNull() }
+            ?: ClientsFilter.ALL
+    )
 
     private val allClients = repository.observeClientsWithSales()
         .map { list -> list.map { it.toUiModel() } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    val clientEditor = ClientListEditController(
+        repository = repository,
+        existingClients = { allClients.value.map { it.client } },
+        scope = viewModelScope
+    )
+
     private val query = MutableStateFlow("")
     private val registrationError = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<ClientsUiState> =
-        combine(allClients, query, registrationError) { clients, term, error ->
+        combine(allClients, query, registrationError, filter) { clients, term, error, currentFilter ->
             ClientsUiState(
-                clients = clients.filter { it.matches(term) },
+                clients = clients.filter { it.matchesFilter(currentFilter) && it.matches(term) },
                 query = term,
-                registrationError = error
+                registrationError = error,
+                filter = currentFilter
             )
         }.stateIn(
             viewModelScope,
@@ -57,6 +76,10 @@ class ClientsViewModel @Inject constructor(
 
     fun updateQuery(newQuery: String) {
         query.value = newQuery
+    }
+
+    fun updateFilter(newFilter: ClientsFilter) {
+        filter.value = newFilter
     }
 
     fun addClient(
@@ -102,11 +125,21 @@ class ClientsViewModel @Inject constructor(
     }
 
     private fun ClientWithSales.toUiModel(): ClientUiModel {
-        val saldo = sales
-            .filter { it.sale.status == PaymentStatus.PENDING }
-            .sumOf { it.totalCents }
-        return ClientUiModel(client = client, pendingBalanceCents = saldo)
+        val today = LocalDate.now().toEpochDay()
+        val pendingSales = sales.filter { it.sale.status == PaymentStatus.PENDING }
+        val saldo = pendingSales.sumOf { it.totalCents }
+        val overdue = pendingSales.any {
+            it.sale.dueEpochDay?.let { dueDate -> dueDate < today } == true
+        }
+        return ClientUiModel(client = client, pendingBalanceCents = saldo, hasOverdueSale = overdue)
     }
+
+    private fun ClientUiModel.matchesFilter(currentFilter: ClientsFilter): Boolean =
+        when (currentFilter) {
+            ClientsFilter.ALL -> true
+            ClientsFilter.PENDING -> pendingBalanceCents > 0L
+            ClientsFilter.OVERDUE -> hasOverdueSale
+        }
 
     private fun ClientUiModel.matches(term: String): Boolean {
         if (term.isBlank()) return true

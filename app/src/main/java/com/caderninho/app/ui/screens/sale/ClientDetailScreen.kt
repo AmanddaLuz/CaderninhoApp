@@ -1,12 +1,6 @@
 package com.caderninho.app.ui.screens.sale
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +15,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -42,8 +39,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.caderninho.app.data.local.ClientWithSales
 import com.caderninho.app.data.local.SaleWithItems
@@ -52,7 +49,6 @@ import com.caderninho.app.domain.model.PaymentStatus
 import com.caderninho.app.ui.components.NotebookFilterChip
 import com.caderninho.app.util.Formatters
 import com.caderninho.app.util.WhatsAppLauncher
-import java.time.LocalDate
 
 private data class ClientDetailActions(
     val charge: () -> Unit,
@@ -60,7 +56,9 @@ private data class ClientDetailActions(
     val markPending: (SaleEntity) -> Unit,
     val reschedule: (SaleEntity) -> Unit,
     val delete: (SaleEntity) -> Unit,
-    val filterHistory: (HistoryFilter) -> Unit
+    val filterHistory: (HistoryFilter) -> Unit,
+    val editClient: () -> Unit,
+    val deleteClient: () -> Unit
 )
 
 @Composable
@@ -68,16 +66,10 @@ fun ClientDetailScreen(onBack: () -> Unit, viewModel: ClientDetailViewModel = hi
     val data by viewModel.clientWithSales.collectAsState()
     val charge by viewModel.charge.collectAsState()
     val history by viewModel.history.collectAsState()
-    val formError by viewModel.formError.collectAsState()
     val context = LocalContext.current
-    var showForm by remember { mutableStateOf(false) }
-    var saleToMarkPending by remember { mutableStateOf<SaleEntity?>(null) }
-    var saleToReschedule by remember { mutableStateOf<SaleEntity?>(null) }
-    val requestNotification = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { }
+    val dialogState = rememberClientDetailDialogState()
 
-    ClientDetailEffects(viewModel, context)
+    ClientDetailEffects(viewModel, context, onBack)
 
     ClientDetailScaffold(
         data = data,
@@ -85,58 +77,30 @@ fun ClientDetailScreen(onBack: () -> Unit, viewModel: ClientDetailViewModel = hi
         actions = ClientDetailActions(
             charge = viewModel::startCharge,
             markPaid = viewModel::markAsPaid,
-            markPending = { saleToMarkPending = it },
-            reschedule = { saleToReschedule = it },
+            markPending = { dialogState.saleToMarkPending = it },
+            reschedule = { dialogState.saleToReschedule = it },
             delete = viewModel::deleteSale,
-            filterHistory = viewModel.selectHistoryFilter
+            filterHistory = viewModel.selectHistoryFilter,
+            editClient = {
+                viewModel.clientEditor.clearError()
+                dialogState.showEditClient = true
+            },
+            deleteClient = { dialogState.showDeleteConfirm = true }
         ),
         onBack = onBack,
         onAddSale = {
             viewModel.clearFormError()
-            showForm = true
+            dialogState.showForm = true
         }
     )
 
-    if (showForm) {
-        SaleFormDialog(
-            errorMessage = formError,
-            onConfirm = { items, method, isPaid, dueDate ->
-                val saved = viewModel.registerSale(items, method, isPaid, dueDate)
-                if (saved) {
-                    requestNotificationPermission(context, requestNotification, isPaid)
-                    showForm = false
-                }
-            },
-            onCancel = {
-                viewModel.clearFormError()
-                showForm = false
-            }
-        )
-    }
-    if (charge.isOpen) {
-        ChargeDialog(
-            state = charge,
-            onSetSale = viewModel::setSaleForCharge,
-            onSelectAll = viewModel::selectAllCharges,
-            onConfirm = viewModel::confirmCharge,
-            onCancel = viewModel::closeCharge
-        )
-    }
-    saleToMarkPending?.let { sale ->
-        DatePickerDialogField(
-            title = "Data prevista de pagamento",
-            initialDateEpochDay = LocalDate.now().toEpochDay(),
-            onConfirm = { data ->
-                if (viewModel.markAsPending(sale, data)) saleToMarkPending = null
-            },
-            onCancel = { saleToMarkPending = null }
-        )
-    }
-    saleToReschedule?.let { sale ->
-        RescheduleDateDialog(sale, viewModel::rescheduleDueDate) {
-            saleToReschedule = null
-        }
-    }
+    ClientDetailDialogs(
+        viewModel = viewModel,
+        data = data,
+        charge = charge,
+        state = dialogState,
+        context = context
+    )
 }
 
 @Composable
@@ -149,7 +113,9 @@ private fun ClientDetailScaffold(
 ) {
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-        topBar = { ClientDetailTopBar(onBack) },
+        topBar = {
+            ClientDetailTopBar(onBack, actions.editClient, actions.deleteClient)
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddSale) {
                 Icon(Icons.Filled.Add, contentDescription = "Nova venda")
@@ -167,7 +133,12 @@ private fun ClientDetailScaffold(
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun ClientDetailTopBar(onBack: () -> Unit) {
+private fun ClientDetailTopBar(
+    onBack: () -> Unit,
+    onEditClient: () -> Unit,
+    onDeleteClient: () -> Unit
+) {
+    var isMenuOpen by remember { mutableStateOf(false) }
     TopAppBar(
         title = { Text("Detalhes do cliente") },
         navigationIcon = {
@@ -178,14 +149,39 @@ private fun ClientDetailTopBar(onBack: () -> Unit) {
                 )
             }
         },
+        actions = {
+            IconButton(onClick = { isMenuOpen = true }) {
+                Icon(Icons.Filled.MoreVert, contentDescription = "Opções do cliente")
+            }
+            DropdownMenu(expanded = isMenuOpen, onDismissRequest = { isMenuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text("Editar cliente") },
+                    onClick = {
+                        isMenuOpen = false
+                        onEditClient()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Excluir cliente") },
+                    onClick = {
+                        isMenuOpen = false
+                        onDeleteClient()
+                    }
+                )
+            }
+        },
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = TOP_BAR_ALPHA)
+            containerColor = androidx.compose.ui.graphics.Color.Transparent
         )
     )
 }
 
 @Composable
-private fun ClientDetailEffects(viewModel: ClientDetailViewModel, context: Context) {
+private fun ClientDetailEffects(
+    viewModel: ClientDetailViewModel,
+    context: Context,
+    onClientDeleted: () -> Unit
+) {
     LaunchedEffect(viewModel) {
         viewModel.chargeDispatches.collect { dispatch ->
             WhatsAppLauncher.sendCharge(context, dispatch.phone, dispatch.message)
@@ -193,6 +189,9 @@ private fun ClientDetailEffects(viewModel: ClientDetailViewModel, context: Conte
     }
     LaunchedEffect(viewModel.openInitialCharge) {
         if (viewModel.openInitialCharge) viewModel.startCharge()
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.clientEditor.deleted.collect { onClientDeleted() }
     }
 }
 
@@ -307,11 +306,16 @@ private fun ClientHeaderCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Saldo pendente: ${Formatters.currencyFromCents(pendingBalanceCents)}")
+                Text(
+                    "Saldo pendente: ${Formatters.currencyFromCents(pendingBalanceCents)}",
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f).padding(end = 8.dp)
+                )
                 if (pendingBalanceCents > 0L) {
                     TextButton(onClick = onCharge) {
                         Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                        Text("Cobrar")
+                        Text("Cobrar", maxLines = 1, softWrap = false)
                     }
                 }
             }
@@ -319,24 +323,8 @@ private fun ClientHeaderCard(
     }
 }
 
-private fun requestNotificationPermission(
-    context: Context,
-    launcher: ManagedActivityResultLauncher<String, Boolean>,
-    isPaid: Boolean
-) {
-    val needsPermission = !isPaid &&
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS
-        ) != PackageManager.PERMISSION_GRANTED
-    if (needsPermission) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-}
-
 private fun HistoryFilter.label(): String = when (this) {
     HistoryFilter.ALL -> "Todos"
     HistoryFilter.PENDING -> "Pendentes"
     HistoryFilter.PAID -> "Pagos"
 }
-
-private const val TOP_BAR_ALPHA = 0.96f

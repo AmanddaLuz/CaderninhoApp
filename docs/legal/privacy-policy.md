@@ -1,6 +1,6 @@
 # Política de privacidade do Caderninho
 
-**Última atualização:** 1 de outubro de 2026
+**Última atualização:** 19 de outubro de 2026
 
 O Caderninho é um aplicativo de controle local de clientes, vendas, serviços e
 pagamentos pendentes. Esta política explica quais dados são tratados e como
@@ -69,4 +69,4 @@ A data no início do documento indicará a revisão mais recente.
 ## Contato
 
 Dúvidas ou solicitações relacionadas à privacidade podem ser registradas em:
-<https://github.com/AmanddaLuz/CaderninhoApp/issues>
+<https://github.com/AmanddaLuz/caderninho-privacy/issues>

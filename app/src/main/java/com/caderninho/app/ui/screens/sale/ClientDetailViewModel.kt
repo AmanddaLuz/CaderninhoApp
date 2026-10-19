@@ -10,6 +10,7 @@ import com.caderninho.app.data.repository.LedgerRepository
 import com.caderninho.app.domain.model.PaymentMethod
 import com.caderninho.app.domain.model.PaymentStatus
 import com.caderninho.app.notification.ChargeReminderCoordinator
+import com.caderninho.app.notification.ChargeRequestBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
@@ -63,6 +65,7 @@ data class HistoryUiState(
 class ClientDetailViewModel @Inject constructor(
     private val repository: LedgerRepository,
     private val reminderCoordinator: ChargeReminderCoordinator,
+    chargeRequestBus: ChargeRequestBus,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -72,6 +75,20 @@ class ClientDetailViewModel @Inject constructor(
     val clientWithSales: StateFlow<ClientWithSales?> =
         repository.observeClientWithSales(clientId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val clientEditor = ClientEditController(
+        repository = repository,
+        currentClient = { clientWithSales.value?.client },
+        scope = viewModelScope
+    )
+
+    init {
+        // Reabre o diálogo de cobrança se a notificação for tocada com esta
+        // tela já aberta para o mesmo cliente (app em primeiro plano).
+        viewModelScope.launch {
+            chargeRequestBus.requests.filter { it == clientId }.collect { startCharge() }
+        }
+    }
 
     private val isChargeOpen = MutableStateFlow(false)
     private val selectedSaleIds = MutableStateFlow<Set<Long>>(emptySet())
