@@ -13,6 +13,7 @@ import com.caderninho.app.fakes.MainDispatcherRule
 import com.caderninho.app.fakes.SaleTestData
 import com.caderninho.app.fakes.saveTestSale
 import com.caderninho.app.notification.ChargeReminderCoordinator
+import com.caderninho.app.notification.ChargeRequestBus
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -43,6 +44,7 @@ class ClientDetailViewModelTest {
         val viewModel = ClientDetailViewModel(
             repository = repository,
             reminderCoordinator = ChargeReminderCoordinator(repository, scheduler),
+            chargeRequestBus = ChargeRequestBus(),
             savedStateHandle = SavedStateHandle(
                 mapOf("clientId" to clientId, "charge" to false)
             )

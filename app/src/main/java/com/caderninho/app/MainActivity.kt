@@ -11,14 +11,19 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.caderninho.app.notification.ChargeNotification
+import com.caderninho.app.notification.ChargeRequestBus
 import com.caderninho.app.ui.components.NotebookPage
 import com.caderninho.app.ui.navigation.LedgerNavHost
 import com.caderninho.app.ui.theme.LedgerTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var chargeRequestBus: ChargeRequestBus
 
     private val clientToCharge = MutableStateFlow<Long?>(null)
 
@@ -54,6 +59,7 @@ class MainActivity : ComponentActivity() {
         val clientId = intent?.getLongExtra(ChargeNotification.CLIENT_ID_EXTRA, INVALID_ID)
         if (clientId != null && clientId != INVALID_ID) {
             clientToCharge.value = clientId
+            chargeRequestBus.request(clientId)
         }
     }
 
@@ -61,3 +67,4 @@ class MainActivity : ComponentActivity() {
         const val INVALID_ID = -1L
     }
 }
+
