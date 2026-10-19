@@ -25,7 +25,8 @@ Console.
 - Release: R8 e redução de recursos habilitados.
 - Compatibilidade com páginas de memória de 16 KB: bibliotecas nativas do
   bundle validadas com alinhamento ELF de 16.384 bytes.
-- Versão inicial preparada: `versionName 1.0.0` e `versionCode 1`.
+- Versão inicial publicada: `versionName 1.0.0` e `versionCode 1`.
+- Próxima atualização de teste: `versionName 1.0.1` e `versionCode 2`.
 
 ## Versão
 
@@ -68,8 +69,8 @@ Artefato esperado:
 
 ## Política de privacidade e Data Safety
 
-- URL após merge em `main`:
-  <https://github.com/AmanddaLuz/CaderninhoApp/blob/main/docs/legal/privacy-policy.md>
+- URL pública independente:
+  <https://amanddaluz.github.io/caderninho-privacy/>
 - O mesmo link está acessível pela Home do aplicativo.
 - Não há SDK de anúncios, analytics, Firebase ou coleta pelo desenvolvedor.
 - Dados permanecem locais, exceto:

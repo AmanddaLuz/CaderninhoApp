@@ -125,4 +125,4 @@ private fun NavHostController.openTopLevel(destination: Destination) {
 }
 
 private const val PRIVACY_POLICY_URL =
-    "https://github.com/AmanddaLuz/CaderninhoApp/blob/main/docs/legal/privacy-policy.md"
+    "https://amanddaluz.github.io/caderninho-privacy/"

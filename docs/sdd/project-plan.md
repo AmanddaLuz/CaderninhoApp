@@ -1,7 +1,8 @@
 # SDD project plan
 
 **Status:** In progress
-**Repository:** `AmanddaLuz/CaderninhoApp` (public, GitHub Actions CI/CD live)
+**Repository:** `AmanddaLuz/CaderninhoApp` (private after policy migration,
+GitHub Actions CI/CD live)
 **UI:** Jetpack Compose
 
 ## Delivery phases
